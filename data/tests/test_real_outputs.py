@@ -104,3 +104,17 @@ def test_dsn_only_when_earth_visible():
         rows = json.loads((SHARED / f"timeline_{s['id']}.json").read_text())["rows"]
         assert all(r["dsn_station"] is None for r in rows if not r["earth_visible"])
         assert sum(r["dsn_station"] is not None for r in rows) > 0.9 * sum(r["earth_visible"] for r in rows)
+
+
+def test_validation_against_nasa_maps():
+    path = Path(__file__).resolve().parents[1] / "sites" / "validation.json"
+    if not path.exists():
+        pytest.skip("validation not run")
+    v = json.loads(path.read_text())
+    s = v["maps"]["summary"]
+    # Our 18.6-year averages track NASA's published maps closely across sites.
+    assert s["sun_correlation"] > 0.95 and s["earth_correlation"] > 0.95
+    assert s["sun_mean_abs_diff_pts"] < 8 and s["earth_mean_abs_diff_pts"] < 8
+    # Both real landers touched down in sunlight with Earth in view (they talked to Earth).
+    for L in v["landings"]:
+        assert L["at_landing"]["sun_frac"] > 0.5 and L["at_landing"]["earth_visible"]

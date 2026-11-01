@@ -1,0 +1,1364 @@
+{
+ "maps": {
+  "source": "NASA LOLA AVGVISIB_75S_120M_201608 (Mazarico et al. 2011, updated 2016), pgda.gsfc.nasa.gov/products/69",
+  "span": [
+   "2027-01-01 00:00",
+   "2045-08-08 00:00",
+   "6h"
+  ],
+  "sites": [
+   {
+    "site": "cabeus_b_peak",
+    "name": "Peak near Cabeus B",
+    "sun_any": 0.529,
+    "sun_mean_frac": 0.522,
+    "earth_any": 0.796,
+    "earth_centre": 0.727,
+    "sun_any_no_mast": 0.484,
+    "nasa_sun": 0.524,
+    "nasa_sun_3x3": [
+     0.39,
+     0.55
+    ],
+    "nasa_earth": 0.725
+   },
+   {
+    "site": "haworth",
+    "name": "Haworth",
+    "sun_any": 0.698,
+    "sun_mean_frac": 0.648,
+    "earth_any": 0.61,
+    "earth_centre": 0.563,
+    "sun_any_no_mast": 0.547,
+    "nasa_sun": 0.66,
+    "nasa_sun_3x3": [
+     0.477,
+     0.677
+    ],
+    "nasa_earth": 0.603
+   },
+   {
+    "site": "malapert_massif",
+    "name": "Malapert Massif",
+    "sun_any": 0.719,
+    "sun_mean_frac": 0.671,
+    "earth_any": 0.769,
+    "earth_centre": 0.706,
+    "sun_any_no_mast": 0.582,
+    "nasa_sun": 0.655,
+    "nasa_sun_3x3": [
+     0.388,
+     0.788
+    ],
+    "nasa_earth": 0.725
+   },
+   {
+    "site": "mons_mouton_plateau",
+    "name": "Mons Mouton Plateau",
+    "sun_any": 0.437,
+    "sun_mean_frac": 0.418,
+    "earth_any": 0.626,
+    "earth_centre": 0.578,
+    "sun_any_no_mast": 0.386,
+    "nasa_sun": 0.422,
+    "nasa_sun_3x3": [
+     0.405,
+     0.43
+    ],
+    "nasa_earth": 0.609
+   },
+   {
+    "site": "mons_mouton",
+    "name": "Mons Mouton",
+    "sun_any": 0.788,
+    "sun_mean_frac": 0.746,
+    "earth_any": 0.805,
+    "earth_centre": 0.736,
+    "sun_any_no_mast": 0.558,
+    "nasa_sun": 0.667,
+    "nasa_sun_3x3": [
+     0.373,
+     0.784
+    ],
+    "nasa_earth": 0.71
+   },
+   {
+    "site": "nobile_rim_1",
+    "name": "Nobile Rim 1",
+    "sun_any": 0.845,
+    "sun_mean_frac": 0.793,
+    "earth_any": 0.702,
+    "earth_centre": 0.649,
+    "sun_any_no_mast": 0.673,
+    "nasa_sun": 0.763,
+    "nasa_sun_3x3": [
+     0.525,
+     0.835
+    ],
+    "nasa_earth": 0.656
+   },
+   {
+    "site": "nobile_rim_2",
+    "name": "Nobile Rim 2",
+    "sun_any": 0.528,
+    "sun_mean_frac": 0.514,
+    "earth_any": 0.664,
+    "earth_centre": 0.613,
+    "sun_any_no_mast": 0.466,
+    "nasa_sun": 0.519,
+    "nasa_sun_3x3": [
+     0.293,
+     0.524
+    ],
+    "nasa_earth": 0.645
+   },
+   {
+    "site": "de_gerlache_rim_2",
+    "name": "de Gerlache Rim 2",
+    "sun_any": 0.789,
+    "sun_mean_frac": 0.759,
+    "earth_any": 0.618,
+    "earth_centre": 0.571,
+    "sun_any_no_mast": 0.477,
+    "nasa_sun": 0.746,
+    "nasa_sun_3x3": [
+     0.489,
+     0.785
+    ],
+    "nasa_earth": 0.6
+   },
+   {
+    "site": "slater_plain",
+    "name": "Slater Plain",
+    "sun_any": 0.588,
+    "sun_mean_frac": 0.569,
+    "earth_any": 0.39,
+    "earth_centre": 0.339,
+    "sun_any_no_mast": 0.494,
+    "nasa_sun": 0.577,
+    "nasa_sun_3x3": [
+     0.501,
+     0.591
+    ],
+    "nasa_earth": 0.397
+   }
+  ],
+  "summary": {
+   "sun_mean_diff_pts": 4.3,
+   "sun_mean_abs_diff_pts": 4.3,
+   "sun_max_abs_diff_pts": 12.1,
+   "sun_mean_diff_no_mast_pts": -9.6,
+   "sun_within_3x3_pts": 8,
+   "sun_correlation": 0.978,
+   "earth_mean_diff_pts": 3.4,
+   "earth_mean_abs_diff_pts": 3.6,
+   "earth_max_abs_diff_pts": 9.5,
+   "earth_correlation": 0.987
+  }
+ },
+ "landings": [
+  {
+   "id": "im1",
+   "name": "IM-1 Odysseus",
+   "lat": -80.13,
+   "lon": 1.44,
+   "dem": "LDEM_75S_30M (near) + LDEM_75S_120M (far)",
+   "ground_m": 2594.2,
+   "reported": "shut down at the start of the lunar night on 29 Feb 2024",
+   "at_landing": {
+    "time": "2024-02-22T23:00Z",
+    "sun_frac": 1.0,
+    "earth_visible": true
+   },
+   "sunlit_hours_pct": 95.4,
+   "earth_visible_pct": 100.0,
+   "first_sunset": "2024-03-02T15:00Z",
+   "hourly": [
+    {
+     "time": "2024-02-22T23:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-23T00:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-23T01:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-23T02:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-23T03:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-23T04:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-23T05:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-23T06:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-23T07:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-23T08:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-23T09:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-23T10:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-23T11:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-23T12:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-23T13:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-23T14:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-23T15:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-23T16:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-23T17:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-23T18:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-23T19:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-23T20:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-23T21:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-23T22:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-23T23:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-24T00:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-24T01:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-24T02:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-24T03:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-24T04:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-24T05:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-24T06:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-24T07:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-24T08:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-24T09:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-24T10:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-24T11:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-24T12:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-24T13:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-24T14:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-24T15:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-24T16:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-24T17:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-24T18:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-24T19:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-24T20:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-24T21:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-24T22:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-24T23:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-25T00:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-25T01:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-25T02:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-25T03:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-25T04:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-25T05:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-25T06:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-25T07:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-25T08:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-25T09:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-25T10:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-25T11:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-25T12:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-25T13:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-25T14:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-25T15:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-25T16:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-25T17:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-25T18:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-25T19:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-25T20:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-25T21:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-25T22:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-25T23:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-26T00:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-26T01:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-26T02:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-26T03:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-26T04:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-26T05:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-26T06:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-26T07:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-26T08:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-26T09:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-26T10:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-26T11:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-26T12:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-26T13:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-26T14:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-26T15:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-26T16:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-26T17:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-26T18:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-26T19:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-26T20:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-26T21:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-26T22:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-26T23:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-27T00:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-27T01:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-27T02:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-27T03:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-27T04:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-27T05:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-27T06:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-27T07:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-27T08:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-27T09:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-27T10:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-27T11:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-27T12:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-27T13:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-27T14:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-27T15:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-27T16:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-27T17:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-27T18:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-27T19:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-27T20:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-27T21:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-27T22:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-27T23:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-28T00:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-28T01:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-28T02:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-28T03:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-28T04:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-28T05:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-28T06:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-28T07:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-28T08:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-28T09:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-28T10:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-28T11:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-28T12:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-28T13:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-28T14:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-28T15:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-28T16:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-28T17:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-28T18:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-28T19:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-28T20:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-28T21:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-28T22:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-28T23:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-29T00:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-29T01:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-29T02:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-29T03:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-29T04:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-29T05:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-29T06:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-29T07:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-29T08:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-29T09:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-29T10:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-29T11:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-29T12:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-29T13:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-29T14:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-29T15:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-29T16:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-29T17:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-29T18:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-29T19:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-29T20:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-29T21:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-29T22:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-02-29T23:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-01T00:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-01T01:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-01T02:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-01T03:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-01T04:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-01T05:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-01T06:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-01T07:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-01T08:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-01T09:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-01T10:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-01T11:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-01T12:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-01T13:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-01T14:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-01T15:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-01T16:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-01T17:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-01T18:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-01T19:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-01T20:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-01T21:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-01T22:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-01T23:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-02T00:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-02T01:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-02T02:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-02T03:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-02T04:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-02T05:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-02T06:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-02T07:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-02T08:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-02T09:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-02T10:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-02T11:00Z",
+     "sun_frac": 0.94,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-02T12:00Z",
+     "sun_frac": 0.88,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-02T13:00Z",
+     "sun_frac": 0.76,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-02T14:00Z",
+     "sun_frac": 0.59,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-02T15:00Z",
+     "sun_frac": 0.44,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-02T16:00Z",
+     "sun_frac": 0.28,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-02T17:00Z",
+     "sun_frac": 0.13,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-02T18:00Z",
+     "sun_frac": 0.02,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-02T19:00Z",
+     "sun_frac": 0.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-02T20:00Z",
+     "sun_frac": 0.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-02T21:00Z",
+     "sun_frac": 0.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-02T22:00Z",
+     "sun_frac": 0.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-02T23:00Z",
+     "sun_frac": 0.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2024-03-03T00:00Z",
+     "sun_frac": 0.0,
+     "earth_visible": true
+    }
+   ]
+  },
+  {
+   "id": "im2",
+   "name": "IM-2 Athena",
+   "lat": -84.7906,
+   "lon": 29.1957,
+   "dem": "LDEM_80S_20M (near) + LDEM_75S_120M (far)",
+   "ground_m": 5321.9,
+   "reported": "landed 17:28 UTC on 6 Mar, last contact 06:15 UTC on 7 Mar 2025",
+   "at_landing": {
+    "time": "2025-03-06T17:00Z",
+    "sun_frac": 1.0,
+    "earth_visible": true
+   },
+   "sunlit_hours_pct": 100.0,
+   "earth_visible_pct": 100.0,
+   "first_sunset": null,
+   "hourly": [
+    {
+     "time": "2025-03-06T17:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2025-03-06T18:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2025-03-06T19:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2025-03-06T20:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2025-03-06T21:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2025-03-06T22:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2025-03-06T23:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2025-03-07T00:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2025-03-07T01:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2025-03-07T02:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2025-03-07T03:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2025-03-07T04:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2025-03-07T05:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2025-03-07T06:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    },
+    {
+     "time": "2025-03-07T07:00Z",
+     "sun_frac": 1.0,
+     "earth_visible": true
+    }
+   ]
+  }
+ ]
+}

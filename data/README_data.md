@@ -301,3 +301,53 @@ selected site's grid.
 
 The steep sites (Cabeus B, de Gerlache Rim 2, Nobile Rim 1) are ridges and peaks: good for sunlight, hard for
 driving. That is a real trade-off worth showing in Rover Ops.
+
+## Stage 11: validation (`python data/validate.py`, results in `data/sites/validation.json`)
+
+### Check 1: against NASA's published illumination maps
+
+NASA's LOLA team publishes the average Sun and Earth visibility at the south pole over an 18.6-year lunar
+nutation cycle (`AVGVISIB_75S_120M_201608` and `..._EARTH`, Mazarico et al. 2011, updated 2016,
+https://pgda.gsfc.nasa.gov/products/69). Their quantity is the share of time **any part** of the Sun's (or
+Earth's) disk is above the terrain. We computed the same quantity with our own pipeline (JPL Horizons + our LOLA
+horizons) over 2027-2045 (one 18.6-year cycle, every 6 hours) at all 9 sites.
+
+| Site | Sun: ours | Sun: NASA (3x3 pixel range) | Earth: ours | Earth: NASA |
+| --- | --- | --- | --- | --- |
+| Peak near Cabeus B | 52.9% | 52.4% (39.0-55.0%) | 79.6% | 72.5% |
+| Haworth | 69.8% | 66.0% (47.7-67.7%) | 61.0% | 60.3% |
+| Malapert Massif | 71.9% | 65.5% (38.8-78.8%) | 76.9% | 72.5% |
+| Mons Mouton Plateau | 43.7% | 42.2% (40.5-43.0%) | 62.6% | 60.9% |
+| Mons Mouton | 78.8% | 66.7% (37.3-78.4%) | 80.5% | 71.0% |
+| Nobile Rim 1 | 84.5% | 76.3% (52.5-83.5%) | 70.2% | 65.6% |
+| Nobile Rim 2 | 52.8% | 51.9% (29.3-52.4%) | 66.4% | 64.5% |
+| de Gerlache Rim 2 | 78.9% | 74.6% (48.9-78.5%) | 61.8% | 60.0% |
+| Slater Plain | 58.8% | 57.7% (50.1-59.1%) | 39.0% | 39.7% |
+
+- **Correlation across sites: 0.978 (Sun), 0.987 (Earth).** Mean absolute difference 4.3 points (Sun),
+  3.6 points (Earth).
+- Ours is on average 4.3 points higher for the Sun. Two reasons, both checked:
+  1. **Observer height.** With our 2 m mast we are +4.3 points; with the observer on the ground we are
+     -9.6 points. NASA's map sits between the two: a couple of metres matter a lot when the Sun is this low.
+  2. **Resolution and point choice.** NASA's pixel is 120 m; our points were chosen as the best-lit spot in
+     20 m terrain. At 8 of 9 sites our value is within 2 points of NASA's 3x3-pixel range (it sits near the top
+     of it, as you'd expect for the best spot).
+
+### Check 2: against real landings
+
+| Lander | Reported | Our model |
+| --- | --- | --- |
+| IM-1 Odysseus, 80.13 S 1.44 E, landed 2024-02-22 23:23 UTC (NASA/LROC) | Talked to Earth; "lost power and shut down with the start of the lunar night" on 29 Feb 2024 | Sun fully up and Earth in view at landing; Earth in view 100% of the mission; Sun still about 5 degrees up on 29 Feb; terrain sunset on 2 Mar 15:00 UTC |
+| IM-2 Athena, 84.7906 S 29.1957 E, landed 2025-03-06 17:28 UTC (LROC) | Talked to Earth until 06:15 UTC on 7 Mar; came to rest on its side inside a shadowed 20 m crater | Sun fully up and Earth in view for the whole 13-hour operation on the surrounding terrain |
+
+- Landing conditions match: both landers touched down in sunlight with Earth in view, as they needed to
+  communicate.
+- **IM-1 mismatch, reported honestly:** we predict terrain sunset 2.5 days after Odysseus shut down. Our model
+  (LOLA 30 m near the site, ground height 2,594 m vs LROC's 2,579 m) sees the open terrain; Odysseus came to rest
+  tilted on its side in a 1 km crater on a 12-degree slope, so its panels lost useful sunlight while the Sun was
+  still about 5 degrees up. Our sunset is an upper bound on how long a lander there can run on solar power.
+- **IM-2:** the 20 m crater Athena fell into is smaller than any LOLA pixel, so our model describes the terrain
+  around it, not the crater floor.
+
+Extra data for these checks (gitignored cache): `LDEM_75S_30M` (1.9 GB) for IM-1, and the two `AVGVISIB` maps
+from `https://imbrium.mit.edu/EXTRAS/ILLUMINATION/IMG/`.
