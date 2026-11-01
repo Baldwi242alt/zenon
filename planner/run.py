@@ -32,7 +32,7 @@ def main():
     # 2. Set Start and Target
     # Let's start on the left side and try to get to the right side
     start = (5, 5)    # (row, col)
-    target = (35, 35) # (row, col)
+    target = (35, 25) # (row, col)
     depart_step = 0   # Start at hour 0
 
     print(f"📍 Start: {start} | Target: {target} | Departure: Hour {depart_step}\n")
