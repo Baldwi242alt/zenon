@@ -70,6 +70,7 @@ def horizon_profile(
     max_distance_m=None,
     mast_m=DEFAULT_MAST_M,
     step_cells=0.5,
+    distances_m=None,
 ):
     """Horizon elevation angle (degrees) for each azimuth, seen from one cell.
 
@@ -83,6 +84,8 @@ def horizon_profile(
     max_distance_m how far to look; defaults to the edge of the DEM
     mast_m         observer height above the ground
     step_cells     sampling step along each ray, in cells
+    distances_m    optional explicit sample distances (overrides max_distance_m
+                   and step_cells); use far_field_distances() for long rays
 
     Returns an array the same length as azimuths_deg. A direction with no
     terrain inside the DEM returns -90 (nothing blocks the sky there).
@@ -99,8 +102,12 @@ def horizon_profile(
 
     # Distances along each ray, starting one step out (the observer's own
     # cell would give a meaningless angle).
-    dists_cells = np.arange(step_cells, max_distance_m / cell_size_m + step_cells, step_cells)
-    dists_m = dists_cells * cell_size_m
+    if distances_m is None:
+        dists_cells = np.arange(step_cells, max_distance_m / cell_size_m + step_cells, step_cells)
+        dists_m = dists_cells * cell_size_m
+    else:
+        dists_m = np.asarray(distances_m, dtype=float)
+        dists_cells = dists_m / cell_size_m
 
     # Observer eye height: ground at the observer plus the mast.
     h0 = float(bilinear_sample(dem, np.array([row]), np.array([col]))[0]) + mast_m
@@ -119,6 +126,21 @@ def horizon_profile(
     angles = np.degrees(np.arctan2(heights - drop - h0, dists_m[None, :]))
     angles = np.where(np.isnan(angles), -90.0, angles)
     return angles.max(axis=1)
+
+
+def far_field_distances(cell_size_m, near_m=20_000.0, max_m=150_000.0, growth=0.01):
+    """Sample distances for long rays: every cell out to near_m, then sparser.
+
+    Close terrain needs fine sampling (a small hill nearby matters a lot);
+    far terrain only matters if it's big, so beyond near_m each step grows
+    by `growth` (1%) of the distance. This keeps a 150 km ray to a few
+    hundred samples instead of ~2,000.
+    """
+    near = np.arange(cell_size_m, near_m + cell_size_m, cell_size_m)
+    far = [near[-1]]
+    while far[-1] < max_m:
+        far.append(far[-1] * (1.0 + growth))
+    return np.concatenate([near, np.array(far[1:])])
 
 
 def interp_horizon(profile_deg, profile_az_deg, query_az_deg):

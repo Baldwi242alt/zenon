@@ -39,7 +39,8 @@ ray casting, Sun-disk fraction and scoring code are the real pipeline code.
 | `metrics.py` | Usable days, sun/contact hours, longest dark spell | Done, tested |
 | `schema.py` | Checks every shared file against the data contract | Done |
 | `horizons.py` | JPL Horizons client with disk cache and retries | Done, tested (offline fixture + live) |
-| `dem.py` | LOLA elevation loading | Stage 4 (needs network access) |
+| `dem.py` | LOLA polar DEM loading, stereographic projection, local north/east | Done, tested |
+| `illumination.py` | Terrain horizon to 150 km + hourly Sun/Earth visibility at a point | Done (80 m DEM) |
 
 ## Limits (stated honestly)
 
@@ -62,3 +63,46 @@ rotation data is a prediction after January 2027; this affects times by well
 under a second, which is negligible here.
 
 Live network tests run with `SUNCHASER_LIVE=1 python -m pytest data/tests`.
+
+## Stage 3: sites (`shared/sites.json`)
+
+```bash
+# one-time download (115 MB) into the gitignored cache
+mkdir -p data/cache/lola
+curl -o data/cache/lola/LDEM_80S_80M.IMG https://imbrium.mit.edu/DATA/LOLA_GDR/POLAR/IMG/LDEM_80S_80M.IMG
+curl -o data/cache/lola/LDEM_80S_80M.LBL https://imbrium.mit.edu/DATA/LOLA_GDR/POLAR/IMG/LDEM_80S_80M.LBL
+python data/build_sites.py     # about 2 minutes
+```
+
+- **Regions:** NASA's nine Artemis III candidate regions (October 2024 update).
+- **Candidate points:** the 77 published landing points inside those regions, from Appendix A of
+  "Assessing Potential Landing Sites With Favorable Illumination and Accessible, Potentially
+  Volatile-Rich Permanently Shadowed Regions Within Artemis Candidate Landing Regions",
+  JGR Planets (2025), doi:10.1029/2025JE009434 (`data/sites/artemis_candidate_points.csv`).
+- **Choice:** for each point, terrain horizon from the LOLA 80 m DEM out to 150 km, plus a year (2027) of
+  hourly Sun and Earth positions from JPL Horizons (each point queried separately, because points 40 km
+  apart see the Sun up to 1.4 degrees differently). Per region we keep the point sunlit most often.
+  Every candidate's numbers are in `data/sites/candidate_scores.csv`.
+- **DEM orientation check:** 0 degrees longitude points up the LOLA image; confirmed by sampling Mons Mouton
+  (+6.4 km), Malapert (+4.7 km) and Shackleton's floor (-2.8 km).
+
+| Region | Point | Sunlit (2027) | Earth in view | Longest dark spell | Range across the region's points |
+| --- | --- | --- | --- | --- | --- |
+| Nobile Rim 1 | NR103 | 81.3% | 62.1% | 271 h | 46.6-81.3% |
+| de Gerlache Rim 2 | dGR2_K2023 | 76.9% | 53.5% | 250 h | 20.7-76.9% |
+| Mons Mouton | MMO02 | 74.6% | 71.7% | 387 h | 27.0-74.6% |
+| Malapert Massif | MMA03 | 66.1% | 69.4% | 489 h | 16.7-66.1% |
+| Haworth | HW_K2023 | 65.4% | 54.8% | 409 h | 17.4-65.4% |
+| Slater Plain | SP09 | 59.2% | 33.1% | 370 h | 17.9-59.2% |
+| Peak near Cabeus B | PCB04 | 52.8% | 69.6% | 366 h | 35.5-52.8% |
+| Nobile Rim 2 | NR205 | 51.1% | 60.9% | 405 h | 28.5-51.1% |
+| Mons Mouton Plateau | MMP11 | 40.6% | 56.5% | 500 h | 10.7-40.6% |
+
+Sanity: near-side regions (longitude near 0, such as Malapert and Mons Mouton) see Earth far more than the
+far-side Slater Plain (33%), as expected. "Longest dark spell" is the worst case across the whole year,
+including the season when the Sun sits lowest.
+
+**Limits:** 80 m terrain everywhere for now (Stage 4 adds a sharper DEM nearby); the observer is a 2 m mast;
+Peak near Cabeus B, Nobile Rim 2 and Mons Mouton Plateau are near the DEM's 80 degree S edge, so 10-21% of their
+directions lose terrain more than about 100 km away. These numbers are checked against NASA's published
+illumination maps in Stage 11.

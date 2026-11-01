@@ -1,0 +1,83 @@
+[
+  {
+    "id": "cabeus_b_peak",
+    "name": "Peak near Cabeus B",
+    "lat": -83.369,
+    "lon": -67.665,
+    "elevation_m": 3486.5,
+    "source": "NASA Artemis III candidate region (Oct 2024); point PCB04 from JGR Planets 2025, doi:10.1029/2025JE009434; elevation from LRO LOLA LDEM_80S_80M",
+    "notes": "Sunlit 53% and Earth in view 70% of 2027 (80 m terrain); longest dark spell 366 h. Some terrain beyond 80S is off the map (21% of directions)."
+  },
+  {
+    "id": "haworth",
+    "name": "Haworth",
+    "lat": -86.99,
+    "lon": -24.254,
+    "elevation_m": 1786.3,
+    "source": "NASA Artemis III candidate region (Oct 2024); point HW_K2023 from JGR Planets 2025, doi:10.1029/2025JE009434; elevation from LRO LOLA LDEM_80S_80M",
+    "notes": "Sunlit 65% and Earth in view 55% of 2027 (80 m terrain); longest dark spell 409 h."
+  },
+  {
+    "id": "malapert_massif",
+    "name": "Malapert Massif",
+    "lat": -85.958,
+    "lon": -3.278,
+    "elevation_m": 4949.5,
+    "source": "NASA Artemis III candidate region (Oct 2024); point MMA03 from JGR Planets 2025, doi:10.1029/2025JE009434; elevation from LRO LOLA LDEM_80S_80M",
+    "notes": "Sunlit 66% and Earth in view 69% of 2027 (80 m terrain); longest dark spell 489 h."
+  },
+  {
+    "id": "mons_mouton_plateau",
+    "name": "Mons Mouton Plateau",
+    "lat": -84.269,
+    "lon": 36.672,
+    "elevation_m": 5645.4,
+    "source": "NASA Artemis III candidate region (Oct 2024); point MMP11 from JGR Planets 2025, doi:10.1029/2025JE009434; elevation from LRO LOLA LDEM_80S_80M",
+    "notes": "Sunlit 41% and Earth in view 56% of 2027 (80 m terrain); longest dark spell 500 h."
+  },
+  {
+    "id": "mons_mouton",
+    "name": "Mons Mouton",
+    "lat": -85.481,
+    "lon": 29.549,
+    "elevation_m": 6182.7,
+    "source": "NASA Artemis III candidate region (Oct 2024); point MMO02 from JGR Planets 2025, doi:10.1029/2025JE009434; elevation from LRO LOLA LDEM_80S_80M",
+    "notes": "Sunlit 75% and Earth in view 72% of 2027 (80 m terrain); longest dark spell 387 h."
+  },
+  {
+    "id": "nobile_rim_1",
+    "name": "Nobile Rim 1",
+    "lat": -85.546,
+    "lon": 37.557,
+    "elevation_m": 6117.2,
+    "source": "NASA Artemis III candidate region (Oct 2024); point NR103 from JGR Planets 2025, doi:10.1029/2025JE009434; elevation from LRO LOLA LDEM_80S_80M",
+    "notes": "Sunlit 81% and Earth in view 62% of 2027 (80 m terrain); longest dark spell 271 h."
+  },
+  {
+    "id": "nobile_rim_2",
+    "name": "Nobile Rim 2",
+    "lat": -83.618,
+    "lon": 59.057,
+    "elevation_m": 1135.2,
+    "source": "NASA Artemis III candidate region (Oct 2024); point NR205 from JGR Planets 2025, doi:10.1029/2025JE009434; elevation from LRO LOLA LDEM_80S_80M",
+    "notes": "Sunlit 51% and Earth in view 61% of 2027 (80 m terrain); longest dark spell 405 h. Some terrain beyond 80S is off the map (13% of directions)."
+  },
+  {
+    "id": "de_gerlache_rim_2",
+    "name": "de Gerlache Rim 2",
+    "lat": -88.45,
+    "lon": -67.859,
+    "elevation_m": 1578.2,
+    "source": "NASA Artemis III candidate region (Oct 2024); point dGR2_K2023 from JGR Planets 2025, doi:10.1029/2025JE009434; elevation from LRO LOLA LDEM_80S_80M",
+    "notes": "Sunlit 77% and Earth in view 54% of 2027 (80 m terrain); longest dark spell 250 h."
+  },
+  {
+    "id": "slater_plain",
+    "name": "Slater Plain",
+    "lat": -87.184,
+    "lon": 133.344,
+    "elevation_m": 371.9,
+    "source": "NASA Artemis III candidate region (Oct 2024); point SP09 from JGR Planets 2025, doi:10.1029/2025JE009434; elevation from LRO LOLA LDEM_80S_80M",
+    "notes": "Sunlit 59% and Earth in view 33% of 2027 (80 m terrain); longest dark spell 370 h."
+  }
+]

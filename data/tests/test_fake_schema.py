@@ -26,3 +26,14 @@ def test_schema_catches_a_renamed_field():
     errors = schema.check_sites(sites)
     assert any("missing field 'lat'" in e for e in errors)
     assert any("unexpected field 'latitude'" in e for e in errors)
+
+
+REAL = Path(__file__).resolve().parents[2] / "shared"
+
+
+def test_real_sites_file_matches_schema():
+    sites = json.loads((REAL / "sites.json").read_text())
+    assert schema.check_sites(sites) == []
+    assert len(sites) == 9
+    # Every site is in the south-polar region covered by the LOLA DEM.
+    assert all(-90 < s["lat"] < -80 for s in sites)

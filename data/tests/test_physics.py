@@ -98,3 +98,30 @@ def test_window_metrics_hand_case():
     assert m["both_hours"] == 12.0
     assert m["longest_dark_h"] == 14.0
     assert m["survives"] is True  # 14 h <= 18 h
+
+
+# ---------- DEM projection ----------
+
+from sunchaser_data.dem import PolarDEM  # noqa: E402
+
+
+def test_stereographic_round_trip():
+    lat, lon = -85.942, 359.056
+    x, y = PolarDEM.latlon_to_xy(lat, lon)
+    lat2, lon2 = PolarDEM.xy_to_latlon(x, y)
+    assert lat2 == pytest.approx(lat, abs=1e-9)
+    assert lon2 == pytest.approx(lon, abs=1e-9)
+
+
+def test_distance_from_pole_matches_arc_length_near_pole():
+    # 1 deg from the pole is about 30.3 km of ground; stereographic r agrees
+    # to better than 0.01% this close to the pole.
+    x, y = PolarDEM.latlon_to_xy(-89.0, 0.0)
+    assert math.hypot(x, y) == pytest.approx(30_323, rel=1e-3)
+
+
+def test_far_field_distances_are_fine_near_and_sparse_far():
+    from sunchaser_data.horizon import far_field_distances
+    d = far_field_distances(80.0, near_m=20_000, max_m=150_000)
+    assert d[0] == 80.0 and d[249] == pytest.approx(20_000)
+    assert d[-1] >= 150_000 and len(d) < 500
