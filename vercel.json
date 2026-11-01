@@ -3,7 +3,7 @@
   "functions": {
     "api/copilot.py": {
       "maxDuration": 60,
-      "excludeFiles": "{web/**,data/**,docs/**,planner/**,hardware/**,shared/grid_*.json,**/tests/**,**/test_*.py}"
+      "excludeFiles": "{web/**,data/**,docs/**,planner/**,hardware/**,shared/grid_*.json}"
     }
   }
 }

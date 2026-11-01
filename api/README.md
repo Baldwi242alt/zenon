@@ -44,8 +44,10 @@
 
 ## Testing
 
+The test lives in `data/tests/`, not here: Vercel turns every `.py` file under `api/` into an endpoint.
+
 ```bash
-python -m pytest api/tests      # tools on real data, request checks, loop with a fake Claude (no key needed)
+python -m pytest data/tests/test_copilot.py   # tools on real data, request checks, loop with a fake Claude (no key needed)
 ```
 
 The fake-Claude tests check that a grounded answer comes back with its facts, and that an invented number

@@ -7,7 +7,7 @@ from types import SimpleNamespace
 
 import pytest
 
-spec = importlib.util.spec_from_file_location("copilot", Path(__file__).resolve().parents[1] / "copilot.py")
+spec = importlib.util.spec_from_file_location("copilot", Path(__file__).resolve().parents[2] / "api" / "copilot.py")
 copilot = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(copilot)
 
