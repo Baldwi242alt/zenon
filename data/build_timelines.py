@@ -11,7 +11,9 @@ For each site, one row per hour for the whole of 2027 (8,760 rows):
   - dsn_station: the Deep Space Network complex with the Moon highest above
     its 10 deg mask (dsn.py), when Earth is also visible from the site;
     null when Earth is hidden or no complex can see the Moon.
-surface_temp_k (Insane) is null until that stage.
+  - surface_temp_k: regolith surface temperature from a 1D heat-conduction
+    model with Hayne et al. 2017 properties, on the site's own slope
+    (thermal.py). Context only; see that module for its limits.
 
 Numbers are rounded to 2 decimals to keep each file around 1-2 MB.
 """
@@ -27,6 +29,7 @@ sys.path.insert(0, str(ROOT / "data"))
 
 from sunchaser_data import schema  # noqa: E402
 from sunchaser_data.dsn import best_station, moon_elevations  # noqa: E402
+from sunchaser_data import thermal  # noqa: E402
 from sunchaser_data.illumination import (  # noqa: E402
     PROFILE_AZ, horizon_for_point, light_series, load_standard_dems, summarise)
 
@@ -39,10 +42,12 @@ def r2(x):
     return round(float(x), 2)
 
 
-def build_timeline(site, profile, dsn):
+def build_timeline(site, profile, dsn, slope_aspect):
     s = light_series(site, profile, YEAR_START, YEAR_STOP)
     if dsn["times"] != s["times"]:
         raise SystemExit("DSN and site time steps do not line up")
+    flux = thermal.absorbed_flux(s["sun_elev_deg"], s["sun_az_deg"], s["sun_frac"], *slope_aspect)
+    temp = thermal.surface_temperature(flux)
     rows = []
     for i, t in enumerate(s["times"]):
         rows.append({
@@ -56,7 +61,7 @@ def build_timeline(site, profile, dsn):
             "earth_horizon_deg": r2(s["earth_horizon_deg"][i]),
             "earth_visible": bool(s["earth_visible"][i]),
             "dsn_station": dsn["station"][i] if s["earth_visible"][i] else None,
-            "surface_temp_k": None,
+            "surface_temp_k": round(float(temp[i]), 1),
         })
     return {"site": site["id"], "start": s["times"][0], "step_h": 1, "rows": rows}, s
 
@@ -74,7 +79,9 @@ def main():
         prof, coverage, ground = horizon_for_point(far, site["lat"], site["lon"], near_dem=near)
         profiles[site["id"]] = {"az_deg": PROFILE_AZ.tolist(), "horizon_deg": np.round(prof, 3).tolist(),
                                 "coverage": coverage, "ground_m": round(ground, 1)}
-        tl, series = build_timeline(site, prof, dsn)
+        slope_aspect = thermal.site_slope_aspect(near, site["lat"], site["lon"])
+        tl, series = build_timeline(site, prof, dsn, slope_aspect)
+        temps = [r["surface_temp_k"] for r in tl["rows"]]
         errors = schema.check_timeline(tl)
         if errors:
             raise SystemExit(f"timeline_{site['id']} fails the schema:\n  " + "\n  ".join(errors[:10]))
@@ -84,7 +91,8 @@ def main():
         link = sum(r["dsn_station"] is not None for r in tl["rows"]) / len(tl["rows"])
         print(f"  {out.name:36s} {len(tl['rows'])} rows  {out.stat().st_size / 1e6:4.2f} MB  "
               f"sunlit {m['sunlit_pct']:5.1f}%  earth {m['earth_pct']:5.1f}%  "
-              f"earth+DSN {100 * link:5.1f}%  both {m['both_pct']:5.1f}%")
+              f"earth+DSN {100 * link:5.1f}%  both {m['both_pct']:5.1f}%  slope {slope_aspect[0]:4.1f} deg "
+              f"facing {slope_aspect[1]:3.0f} deg  T {min(temps):5.1f}-{max(temps):5.1f} K")
     # Saved for the shadow grid (Stage 6) and the Methods page (horizon plots).
     PROFILES_OUT.write_text(json.dumps(profiles, separators=(",", ":")))
     print(f"Wrote {len(sites)} timelines (schema OK) and {PROFILES_OUT.relative_to(ROOT)}")

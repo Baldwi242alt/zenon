@@ -351,3 +351,24 @@ horizons) over 2027-2045 (one 18.6-year cycle, every 6 hours) at all 9 sites.
 
 Extra data for these checks (gitignored cache): `LDEM_75S_30M` (1.9 GB) for IM-1, and the two `AVGVISIB` maps
 from `https://imbrium.mit.edu/EXTRAS/ILLUMINATION/IMG/`.
+
+## Stage 13 (Insane): surface temperature (`surface_temp_k` in the timelines)
+
+`sunchaser_data/thermal.py` is a 1D heat-conduction model of the top half-metre of regolith using the
+published properties of **Hayne et al. 2017** (JGR Planets 122, 2371; fitted to LRO Diviner data), taken
+exactly as coded in Hayne's open-source `heat1d` model: angle-dependent albedo, emissivity 0.95,
+density and conductivity rising with depth (H = 0.07 m), temperature-dependent conductivity and heat
+capacity, geothermal flow 0.018 W/m^2. Implicit 1-hour steps; the year is run three times and the last kept.
+
+- **Sunlight on a tilted surface:** with the Sun about 1 degree up, slope matters enormously (a 10 degree slope
+  facing the Sun sees it as if 11 degrees up). Each site's slope and facing direction come from the LOLA 20 m DEM
+  (a plane over +/-40 m); the sites are gentle, 0.7-4.1 degrees, as landing sites must be.
+- **Check against Diviner:** a synthetic equator day gives **385 K at noon and 92 K before dawn**, against
+  Diviner's measured ~390 K and ~95 K (Williams et al. 2017; Hayne et al. 2017). Steady-state radiative balance
+  is also tested.
+- **At the sites (2027):** from about 44 K in the longest darkness to 134-208 K at most; Peak near Cabeus B
+  reaches 208 K because its slope faces the Sun.
+
+**Limits (context, not a substitute for Diviner):** no heating by sunlight scattered from, or infrared emitted by,
+surrounding terrain, so shadowed hours read too cold (IM-2 reported about 100 K in its shadowed crater; our dark
+hours bottom out at 44-63 K on open ground); one slope per site; Sun-Moon distance fixed at 1 AU (+/-3% flux).

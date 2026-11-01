@@ -118,3 +118,12 @@ def test_validation_against_nasa_maps():
     # Both real landers touched down in sunlight with Earth in view (they talked to Earth).
     for L in v["landings"]:
         assert L["at_landing"]["sun_frac"] > 0.5 and L["at_landing"]["earth_visible"]
+
+
+def test_surface_temperatures_are_physical():
+    for s in sites():
+        rows = json.loads((SHARED / f"timeline_{s['id']}.json").read_text())["rows"]
+        T = np.array([r["surface_temp_k"] for r in rows], dtype=float)
+        assert np.all((T > 25) & (T < 300))          # polar regolith: never near equatorial noon (~390 K)
+        lit = np.array([r["sun_frac"] >= 0.5 for r in rows])
+        assert T[lit].mean() > T[~lit].mean()        # sunlit hours are warmer on average
