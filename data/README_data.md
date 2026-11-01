@@ -38,7 +38,7 @@ ray casting, Sun-disk fraction and scoring code are the real pipeline code.
 | `horizon.py` | Terrain horizon by ray casting with lunar curvature | Done, tested on synthetic terrain |
 | `metrics.py` | Usable days, sun/contact hours, longest dark spell | Done, tested |
 | `schema.py` | Checks every shared file against the data contract | Done |
-| `horizons.py` | JPL Horizons client | Stage 2 (needs network access) |
+| `horizons.py` | JPL Horizons client with disk cache and retries | Done, tested (offline fixture + live) |
 | `dem.py` | LOLA elevation loading | Stage 4 (needs network access) |
 
 ## Limits (stated honestly)
@@ -46,3 +46,19 @@ ray casting, Sun-disk fraction and scoring code are the real pipeline code.
 - Sun-disk fraction treats the horizon as flat across the 0.53 degree disk and ignores limb darkening.
 - `horizon_profile` only sees terrain inside the DEM it is given; real sites need a DEM reaching about 150 km.
 - `metrics.py` uses placeholder criteria until Dhiran commits `shared/criteria.json`.
+
+## Stage 2 check: real Horizons data
+
+```bash
+python data/check_horizons.py            # default point -89.45, 137.3 E
+python data/check_horizons.py -88.0 300 1000
+```
+
+Result for -89.45, 137.3 E over 2027 (8,760 hours): Sun elevation stays within
+±2.09° (1.54° axis tilt + 0.55° distance from the pole), the Sun's azimuth turns
+once every 29.53 days (the lunar day), and Earth's elevation swings ±6.8°
+(libration). All match the expected south-pole physics. Note: Horizons' Earth
+rotation data is a prediction after January 2027; this affects times by well
+under a second, which is negligible here.
+
+Live network tests run with `SUNCHASER_LIVE=1 python -m pytest data/tests`.
