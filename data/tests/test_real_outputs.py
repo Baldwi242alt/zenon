@@ -40,3 +40,20 @@ def test_timeline_is_consistent(site_id):
     vis = np.array([r["earth_visible"] for r in rows])
     clear = np.abs(ee - eh) > 0.01  # ignore ties created by rounding
     assert np.all(vis[clear] == (ee > eh)[clear])
+
+
+def test_demo_grid():
+    grids = list(SHARED.glob("grid_*.json"))
+    if not grids:
+        pytest.skip("no grid built")
+    for path in grids:
+        g = json.loads(path.read_text())
+        assert schema.check_grid(g) == []
+        assert path.stat().st_size < 8e6                     # keeps the website fast
+        elev = np.array(g["elevation_m"])
+        gy, gx = np.gradient(elev, g["cell_size_m"])
+        slope = np.degrees(np.arctan(np.hypot(gx, gy)))
+        # Heights are stored to 0.1 m and slopes to 0.1 deg, so recomputing a
+        # slope from rounded heights can differ by up to about 0.2 deg.
+        assert np.allclose(slope, np.array(g["slope_deg"]), atol=0.25)
+        assert g["center"]["lat"] in [s["lat"] for s in sites()]

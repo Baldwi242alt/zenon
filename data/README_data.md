@@ -158,3 +158,35 @@ The per-site horizon profiles (720 directions) are saved in `data/sites/horizon_
 shadow grid and for horizon plots on the Methods page. `data/tests/test_real_outputs.py` re-checks every
 row: `sun_frac` agrees with the formula, `earth_visible` agrees with the elevations, and every hour of
 2027 is present.
+
+## Stage 6: shadow grid (`shared/grid_slater_plain.json`)
+
+```bash
+python data/build_grid.py --scan     # ~10 min first time (per-cell horizons cached in data/cache/grids/)
+python data/build_grid.py --site slater_plain --start 2027-10-27T00:00Z
+```
+
+64 x 64 cells of 40 m (2.56 km square) centred on the Slater Plain point, 336 hourly steps (14 days),
+aligned with the south-polar map (0 degrees longitude up). File size 4.7 MB.
+
+**How each cell's sunlight is computed** (`sunchaser_data/grid.py`):
+- Near terrain (within 15 km): ray-cast from every cell on the LOLA 20 m DEM, 360 directions.
+- Far terrain (15-150 km): heights along each ray read once from the centre on the LOLA 120 m DEM;
+  each cell computes its own angle to them from its own ground height.
+- Sun position from the site's timeline; each cell's Sun elevation is corrected for lunar curvature
+  (a cell 1 km closer to the Sun sees it about 0.03 degrees higher).
+- `sun_pct` = round(100 x visible fraction of the Sun's disk).
+
+**Why Slater Plain, 27 Oct - 10 Nov 2027:** `--scan` scored every daily 14-day window in 2027 at all 9 sites
+for drama: shadows that move (cells lit 20-80% of the time), a mix of survivable and deadly cells
+(longest dark spell above the 18 h placeholder limit), and plenty of light at the start. Slater Plain scored
+highest (0.205) and is also the most drivable site: only 1% of cells are steeper than 15 degrees
+(Malapert 21%, Nobile Rim 1 26%). Over the window the lit share falls day by day from 92% to 31% as the
+Sun sinks, so the rover is racing the dark. The best window at every site is in
+`data/sites/grid_window_options.csv` if Harril prefers another (Mons Mouton is the best near-side option
+with good Earth contact and 5% steep cells).
+
+**Limits:** azimuths every 1 degree; far terrain is ray-cast from the centre, not per cell; 40 m cells smooth
+out smaller features; the rover's 2 m mast is the observer height. Near summits the horizon changes quickly
+with height: at Malapert, a cell's averaged ground sits 0.5 m below the summit point, which raises nearby
+horizon angles by about 0.13 degrees. That's real, not an error.
