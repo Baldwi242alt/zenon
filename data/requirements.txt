@@ -3,3 +3,4 @@ requests
 pyproj
 rasterio
 pytest
+anthropic

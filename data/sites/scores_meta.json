@@ -1,0 +1,39 @@
+{
+  "criteria_source": "PLACEHOLDER criteria from CLAUDE.md 2.7 (shared/criteria.json not committed yet)",
+  "criteria": {
+    "mission_length_days": 10,
+    "usable_day": {
+      "min_sun_hours": 12,
+      "min_contact_hours": 4
+    },
+    "max_dark_spell_hours": 18,
+    "min_battery_reserve_pct": 15,
+    "min_survival_probability": 0.95
+  },
+  "window": "June 2027",
+  "month_spread_days": {
+    "Jan": 1.75,
+    "Feb": 3.17,
+    "Mar": 2.22,
+    "Apr": 1.94,
+    "May": 2.96,
+    "Jun": 3.27,
+    "Jul": 2.88,
+    "Aug": 2.31,
+    "Sep": 2.81,
+    "Oct": 2.2,
+    "Nov": 1.26,
+    "Dec": 1.31
+  },
+  "brief_source": {
+    "cabeus_b_peak": "template",
+    "de_gerlache_rim_2": "template",
+    "haworth": "template",
+    "mons_mouton": "template",
+    "slater_plain": "template",
+    "malapert_massif": "template",
+    "nobile_rim_2": "template",
+    "mons_mouton_plateau": "template",
+    "nobile_rim_1": "template"
+  }
+}

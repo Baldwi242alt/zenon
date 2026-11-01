@@ -57,3 +57,17 @@ def test_demo_grid():
         # slope from rounded heights can differ by up to about 0.2 deg.
         assert np.allclose(slope, np.array(g["slope_deg"]), atol=0.25)
         assert g["center"]["lat"] in [s["lat"] for s in sites()]
+
+
+def test_scores_file():
+    path = SHARED / "scores.json"
+    if not path.exists():
+        pytest.skip("scores not built")
+    s = json.loads(path.read_text())
+    assert schema.check_scores(s) == []
+    assert {r["site"] for r in s["sites"]} == {x["id"] for x in sites()}
+    # Survivors first, then usable days.
+    keys = [(not r["survives"], -r["usable_days"]) for r in s["sites"]]
+    assert keys == sorted(keys)
+    # Best landings fall inside the scoring window.
+    assert all(s["window_start"] <= r["best_landing"][:10] <= s["window_end"] for r in s["sites"])

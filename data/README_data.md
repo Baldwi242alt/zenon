@@ -190,3 +190,44 @@ with good Earth contact and 5% steep cells).
 out smaller features; the rover's 2 m mast is the observer height. Near summits the horizon changes quickly
 with height: at Malapert, a cell's averaged ground sits 0.5 m below the summit point, which raises nearby
 horizon angles by about 0.13 degrees. That's real, not an error.
+
+## Stage 7: scores and AI briefs (`shared/scores.json`)
+
+```bash
+python data/build_scores.py                       # template briefs (no API key needed)
+ANTHROPIC_API_KEY=... python data/build_scores.py # AI briefs, checked by the numbers guard
+```
+
+1. For every month of 2027, every site and every landing time (every 6 h), score a 10-day mission
+   (`scores.py`, using the usable-day rules from `metrics.py`).
+2. **Month:** the one where the choice of site matters most (largest spread of best usable days
+   between sites): **June 2027** (spread 3.3 days). Every month's spread is in `data/sites/scores_meta.json`;
+   force another with `--month 2027-03`.
+3. **Best landing per site, and ranking:** survives first, then usable days, then shorter longest dark spell,
+   then more contact hours. *Team decision on top of handbook B.13, which ranks by usable days first:* a rover
+   that freezes gets no more usable days, so a survivable landing beats one that looks better on paper.
+   Example: in June, Nobile Rim 1's best landing has 7 usable days but an 84 h dark spell (limit 18 h),
+   so it ranks last.
+
+| Rank | Site | Usable days (of 10) | Longest dark | Best landing |
+| --- | --- | --- | --- | --- |
+| 1 | Peak near Cabeus B | 10 | 0 h | 19 Jun 18:00 |
+| 2 | de Gerlache Rim 2 | 10 | 0 h | 22 Jun 06:00 |
+| 3 | Haworth | 10 | 1 h | 21 Jun 06:00 |
+| 4 | Mons Mouton | 8 | 9 h | 16 Jun 12:00 |
+| 5 | Slater Plain | 6 | 0 h | 1 Jun 00:00 |
+| 6 | Malapert Massif | 5 | 9 h | 13 Jun 18:00 |
+| 7 | Nobile Rim 2 | 3 | 12 h | 8 Jun 06:00 |
+| 8 | Mons Mouton Plateau | 0 | 6 h | 10 Jun 12:00 |
+| 9 | Nobile Rim 1 | 7 (does not survive) | 84 h | 27 Jun 12:00 |
+
+**Criteria:** `shared/criteria.json` isn't committed yet, so the PLACEHOLDER values from `CLAUDE.md` 2.7 are used
+(10-day mission, 12 sun hours + 4 contact hours per usable day, 18 h dark limit). Rerun once Dhiran commits it.
+
+**Briefs** (`briefs.py`): Claude (`claude-opus-5-5`, low effort, server-side refusal fallback on) writes three
+sentences from the site's facts. The **numbers guard** extracts every number from the text and checks it
+against the facts (allowing normal rounding and date parts); a brief with any invented number is retried
+once, then replaced by the template. Without an API key every brief comes from the template, which is built
+only from the facts. Which source each brief came from is recorded in `data/sites/scores_meta.json`
+(currently: template for all 9). Tests use a fake client to check that an invented "99%" is rejected and that
+a refusal falls back to the template.
