@@ -97,3 +97,10 @@ def test_windows_match_timeline(site_id):
         i = times.index(row["landing"])
         m = window_metrics([r["sun_frac"] for r in rows[i:i + n]], [r["earth_visible"] for r in rows[i:i + n]], crit)
         assert m["usable_days"] == row["usable_days"] and m["longest_dark_h"] == row["longest_dark_h"]
+
+
+def test_dsn_only_when_earth_visible():
+    for s in sites():
+        rows = json.loads((SHARED / f"timeline_{s['id']}.json").read_text())["rows"]
+        assert all(r["dsn_station"] is None for r in rows if not r["earth_visible"])
+        assert sum(r["dsn_station"] is not None for r in rows) > 0.9 * sum(r["earth_visible"] for r in rows)

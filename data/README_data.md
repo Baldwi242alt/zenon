@@ -256,3 +256,22 @@ landing-window heatmap and the cost-of-a-slip chart (a 1/2/3/7-day slip is 4/8/1
 
 With the placeholder 18 h dark limit, most of the year is not survivable at any site: the landing date matters
 as much as the site. Slater Plain almost never has 10 usable days because Earth is in view only 32% of the time.
+
+## Stage 9: Deep Space Network coverage (`dsn_station` in the timelines)
+
+`sunchaser_data/dsn.py` asks JPL Horizons for the Moon's elevation every hour of 2027 from each DSN complex
+(Goldstone, Madrid, Canberra; observer on Earth, target the Moon). A complex is available when the Moon is
+more than 10 degrees above its horizon. In each timeline row, `dsn_station` is the available complex with the
+Moon highest in its sky, but only when Earth is also visible from the lunar site; otherwise `null`.
+`python data/build_timelines.py` rebuilds the timelines with it.
+
+- At least one complex sees the Moon above 10 degrees for **98.1%** of 2027; the longest gap is **2 hours**.
+  Canberra and Madrid each take 34.9% of hours, Goldstone 28.3%.
+- So the binding limit on direct-to-Earth contact is the lunar terrain, not the DSN: requiring a DSN
+  complex removes at most 0.9 percentage points of contact time at any site (Malapert: 71.4% Earth in view,
+  70.5% with a DSN complex too).
+- `earth_visible` (and so usable days, windows and scores) is unchanged; `dsn_station` adds which dish would
+  carry the link, for the timeline tooltip and the copilot.
+
+**Limits:** the Moon's centre is used (a south-pole site sits about 1,737 km from it, shifting elevations seen
+from Earth by up to about 0.3 degrees); antenna scheduling and other missions are ignored.
