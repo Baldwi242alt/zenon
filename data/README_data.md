@@ -131,3 +131,30 @@ terrain in all directions to 150 km (previously 10-21% of directions were cut of
 
 Test: `data/tests/test_two_res.py` builds two tiny fake DEM files with a nearby plateau and a distant
 plateau and checks both horizon angles against hand-worked values.
+
+## Stage 5: timelines (`shared/timeline_SITE.json`)
+
+```bash
+python data/build_timelines.py    # about 1 minute (Horizons responses are cached)
+```
+
+One row per hour for all of 2027 (8,760 rows) for each of the 9 sites, about 2.1 MB per file.
+Sun/Earth positions from JPL Horizons; horizons from the two-resolution LOLA ray casting (Stage 4);
+`sun_frac` from the Sun-disk formula; `dsn_station` and `surface_temp_k` are `null` until Stages 9 and 13.
+
+| Site | Sunlit | Earth in view | Both |
+| --- | --- | --- | --- |
+| Mons Mouton | 75.7% | 72.7% | 51.6% |
+| Nobile Rim 1 | 80.6% | 62.1% | 47.9% |
+| Malapert Massif | 68.3% | 71.4% | 44.5% |
+| de Gerlache Rim 2 | 76.9% | 53.5% | 41.7% |
+| Peak near Cabeus B | 52.3% | 68.9% | 35.6% |
+| Haworth | 65.5% | 54.8% | 34.9% |
+| Nobile Rim 2 | 50.9% | 60.9% | 30.5% |
+| Mons Mouton Plateau | 40.9% | 56.6% | 25.5% |
+| Slater Plain | 58.4% | 32.0% | 18.7% |
+
+The per-site horizon profiles (720 directions) are saved in `data/sites/horizon_profiles.json` for the
+shadow grid and for horizon plots on the Methods page. `data/tests/test_real_outputs.py` re-checks every
+row: `sun_frac` agrees with the formula, `earth_visible` agrees with the elevations, and every hour of
+2027 is present.
