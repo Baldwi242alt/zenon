@@ -59,27 +59,49 @@ def parse_label(text):
 
 
 class PolarDEM:
-    """A LOLA south-polar DEM held in memory as heights in metres."""
+    """A LOLA south-polar DEM, as heights in metres.
 
-    def __init__(self, img_path, lbl_path=None):
+    Small DEMs (80 m, 120 m: ~100 MB) are loaded fully into memory. Large ones
+    (20 m: 1.8 GB) are opened with lazy=True: the file is memory-mapped and only
+    the small square around a site is read with window().
+    """
+
+    def __init__(self, img_path, lbl_path=None, lazy=False):
         img_path = Path(img_path)
         lbl_path = Path(lbl_path) if lbl_path else img_path.with_suffix(".LBL")
         self.meta = parse_label(lbl_path.read_text())
         if self.meta["center_lat"] != -90:
             raise ValueError("only south-polar DEMs are supported")
-        raw = np.fromfile(img_path, dtype="<i2")
-        expected = self.meta["lines"] * self.meta["samples"]
-        if raw.size != expected:
-            raise ValueError(f"{img_path.name}: {raw.size} values, label says {expected}")
-        self.heights = (raw.reshape(self.meta["lines"], self.meta["samples"])
-                        .astype(np.float32) * np.float32(self.meta["scaling"]))
+        shape = (self.meta["lines"], self.meta["samples"])
+        expected = shape[0] * shape[1] * 2
+        if img_path.stat().st_size != expected:
+            raise ValueError(f"{img_path.name}: {img_path.stat().st_size} bytes, label says {expected}")
+        self.shape = shape
         self.cell_size_m = self.meta["map_scale_m"]
         self.name = img_path.stem
+        self._raw = np.memmap(img_path, dtype="<i2", mode="r", shape=shape)
+        self.heights = None if lazy else self._raw.astype(np.float32) * np.float32(self.meta["scaling"])
 
     @classmethod
-    def from_cache(cls, name="LDEM_80S_80M"):
+    def from_cache(cls, name="LDEM_80S_80M", lazy=False):
         """Load a DEM previously downloaded to data/cache/lola/."""
-        return cls(CACHE_DIR / f"{name}.IMG", CACHE_DIR / f"{name}.LBL")
+        return cls(CACHE_DIR / f"{name}.IMG", CACHE_DIR / f"{name}.LBL", lazy=lazy)
+
+    def window(self, lat_deg, lon_deg, half_size_m):
+        """Read the square of terrain centred on a point (works for lazy DEMs).
+
+        Returns (heights, row0, col0): a float32 array in metres plus the
+        position of its top-left cell in the full DEM, so that full-DEM
+        (row, col) = (row0 + r, col0 + c).
+        """
+        row, col = self.latlon_to_rc(lat_deg, lon_deg)
+        half = int(np.ceil(half_size_m / self.cell_size_m)) + 2
+        r0 = max(int(np.floor(row)) - half, 0)
+        c0 = max(int(np.floor(col)) - half, 0)
+        r1 = min(int(np.floor(row)) + half + 1, self.shape[0])
+        c1 = min(int(np.floor(col)) + half + 1, self.shape[1])
+        block = np.asarray(self._raw[r0:r1, c0:c1], dtype=np.float32) * np.float32(self.meta["scaling"])
+        return block, r0, c0
 
     # ----- projection -----
 
@@ -121,6 +143,10 @@ class PolarDEM:
 
     def height_at(self, lat_deg, lon_deg):
         """Terrain height (m, relative to 1737.4 km) at a lat/lon, bilinear."""
+        if self.heights is None:  # lazy DEM: read a tiny window around the point
+            block, r0, c0 = self.window(lat_deg, lon_deg, 3 * self.cell_size_m)
+            r, c = self.latlon_to_rc(lat_deg, lon_deg)
+            return float(bilinear_sample(block, np.array([r - r0]), np.array([c - c0]))[0])
         r, c = self.latlon_to_rc(np.atleast_1d(lat_deg), np.atleast_1d(lon_deg))
         h = bilinear_sample(self.heights, r, c)
         return float(h[0]) if np.ndim(lat_deg) == 0 else h

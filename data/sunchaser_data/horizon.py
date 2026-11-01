@@ -71,6 +71,7 @@ def horizon_profile(
     mast_m=DEFAULT_MAST_M,
     step_cells=0.5,
     distances_m=None,
+    ground_h_m=None,
 ):
     """Horizon elevation angle (degrees) for each azimuth, seen from one cell.
 
@@ -110,7 +111,9 @@ def horizon_profile(
         dists_cells = dists_m / cell_size_m
 
     # Observer eye height: ground at the observer plus the mast.
-    h0 = float(bilinear_sample(dem, np.array([row]), np.array([col]))[0]) + mast_m
+    if ground_h_m is None:
+        ground_h_m = float(bilinear_sample(dem, np.array([row]), np.array([col]))[0])
+    h0 = ground_h_m + mast_m
 
     # Direction of each azimuth in (row, col) space:
     # direction = cos(az) * north + sin(az) * east

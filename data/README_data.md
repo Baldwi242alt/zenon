@@ -40,7 +40,7 @@ ray casting, Sun-disk fraction and scoring code are the real pipeline code.
 | `schema.py` | Checks every shared file against the data contract | Done |
 | `horizons.py` | JPL Horizons client with disk cache and retries | Done, tested (offline fixture + live) |
 | `dem.py` | LOLA polar DEM loading, stereographic projection, local north/east | Done, tested |
-| `illumination.py` | Terrain horizon to 150 km + hourly Sun/Earth visibility at a point | Done (80 m DEM) |
+| `illumination.py` | Two-resolution terrain horizon to 150 km + hourly Sun/Earth visibility | Done, tested |
 
 ## Limits (stated honestly)
 
@@ -79,7 +79,7 @@ python data/build_sites.py     # about 2 minutes
   "Assessing Potential Landing Sites With Favorable Illumination and Accessible, Potentially
   Volatile-Rich Permanently Shadowed Regions Within Artemis Candidate Landing Regions",
   JGR Planets (2025), doi:10.1029/2025JE009434 (`data/sites/artemis_candidate_points.csv`).
-- **Choice:** for each point, terrain horizon from the LOLA 80 m DEM out to 150 km, plus a year (2027) of
+- **Choice:** for each point, terrain horizon from LOLA (two resolutions, see Stage 4) out to 150 km, plus a year (2027) of
   hourly Sun and Earth positions from JPL Horizons (each point queried separately, because points 40 km
   apart see the Sun up to 1.4 degrees differently). Per region we keep the point sunlit most often.
   Every candidate's numbers are in `data/sites/candidate_scores.csv`.
@@ -88,21 +88,46 @@ python data/build_sites.py     # about 2 minutes
 
 | Region | Point | Sunlit (2027) | Earth in view | Longest dark spell | Range across the region's points |
 | --- | --- | --- | --- | --- | --- |
-| Nobile Rim 1 | NR103 | 81.3% | 62.1% | 271 h | 46.6-81.3% |
-| de Gerlache Rim 2 | dGR2_K2023 | 76.9% | 53.5% | 250 h | 20.7-76.9% |
-| Mons Mouton | MMO02 | 74.6% | 71.7% | 387 h | 27.0-74.6% |
-| Malapert Massif | MMA03 | 66.1% | 69.4% | 489 h | 16.7-66.1% |
-| Haworth | HW_K2023 | 65.4% | 54.8% | 409 h | 17.4-65.4% |
-| Slater Plain | SP09 | 59.2% | 33.1% | 370 h | 17.9-59.2% |
-| Peak near Cabeus B | PCB04 | 52.8% | 69.6% | 366 h | 35.5-52.8% |
-| Nobile Rim 2 | NR205 | 51.1% | 60.9% | 405 h | 28.5-51.1% |
-| Mons Mouton Plateau | MMP11 | 40.6% | 56.5% | 500 h | 10.7-40.6% |
+| Nobile Rim 1 | NR103 | 80.6% | 62.1% | 224 h | see `candidate_scores.csv` |
+| de Gerlache Rim 2 | dGR2_K2023 | 76.9% | 53.5% | 250 h | |
+| Mons Mouton | MMO02 | 75.7% | 72.7% | 390 h | |
+| Malapert Massif | MMA03 | 68.3% | 71.4% | 479 h | |
+| Haworth | HW_K2023 | 65.5% | 54.8% | 403 h | |
+| Slater Plain | SP09 | 58.4% | 32.0% | 380 h | |
+| Peak near Cabeus B | PCB04 | 52.3% | 68.9% | 370 h | |
+| Nobile Rim 2 | NR205 | 50.9% | 60.9% | 405 h | |
+| Mons Mouton Plateau | MMP11 | 40.9% | 56.6% | 497 h | |
 
 Sanity: near-side regions (longitude near 0, such as Malapert and Mons Mouton) see Earth far more than the
 far-side Slater Plain (33%), as expected. "Longest dark spell" is the worst case across the whole year,
 including the season when the Sun sits lowest.
 
-**Limits:** 80 m terrain everywhere for now (Stage 4 adds a sharper DEM nearby); the observer is a 2 m mast;
-Peak near Cabeus B, Nobile Rim 2 and Mons Mouton Plateau are near the DEM's 80 degree S edge, so 10-21% of their
-directions lose terrain more than about 100 km away. These numbers are checked against NASA's published
-illumination maps in Stage 11.
+**Limits:** the observer is a 2 m mast; terrain between pixels is interpolated; the horizon is sampled every
+0.5 degrees of azimuth. These numbers are checked against NASA's published illumination maps in Stage 11.
+
+## Stage 4: terrain horizons (two resolutions)
+
+```bash
+# one-time downloads into the gitignored cache (about 2 GB in total)
+for f in LDEM_80S_20M LDEM_75S_120M; do
+  curl -o data/cache/lola/$f.IMG https://imbrium.mit.edu/DATA/LOLA_GDR/POLAR/IMG/$f.IMG
+  curl -o data/cache/lola/$f.LBL https://imbrium.mit.edu/DATA/LOLA_GDR/POLAR/IMG/$f.LBL
+done
+```
+
+| Distance from the observer | DEM | Why |
+| --- | --- | --- |
+| 0 to 15 km | LOLA `LDEM_80S_20M` (20 m pixels, sampled every 20 m) | Small nearby bumps can hide a Sun that is only 1 degree up |
+| 15 to 150 km | LOLA `LDEM_75S_120M` (120 m pixels, reaches 75 degrees S) | Only big mountains matter far away, but the map must reach far enough |
+
+The horizon in each direction is the higher of the two, both computed from the same observer height
+(20 m DEM + 2 m mast) and including lunar curvature. The 20 m DEM is 1.8 GB, so only a 30 km square
+around each point is read from disk.
+
+**What changed against the 80 m-only run (all 77 points):** sunlit time fell by 0.5 percentage points on
+average (largest change 4.2 points, at HW02) because small nearby bumps now show up; every point now has
+terrain in all directions to 150 km (previously 10-21% of directions were cut off for three regions); the
+20 m and 80 m DEMs agree on point heights to within 1.6 m. The chosen point in each region did not change.
+
+Test: `data/tests/test_two_res.py` builds two tiny fake DEM files with a nearby plateau and a distant
+plateau and checks both horizon angles against hand-worked values.
