@@ -71,3 +71,29 @@ def test_scores_file():
     assert keys == sorted(keys)
     # Best landings fall inside the scoring window.
     assert all(s["window_start"] <= r["best_landing"][:10] <= s["window_end"] for r in s["sites"])
+
+
+@pytest.mark.parametrize("site_id", [s["id"] for s in json.loads((SHARED / "sites.json").read_text())])
+def test_windows_match_timeline(site_id):
+    path = SHARED / f"windows_{site_id}.json"
+    if not path.exists():
+        pytest.skip("windows not built")
+    from sunchaser_data.metrics import window_metrics
+    w = json.loads(path.read_text())
+    assert schema.check_windows(w) == []
+    rows = json.loads((SHARED / f"timeline_{site_id}.json").read_text())["rows"]
+    times = [r["time"] for r in rows]
+    assert w["rows"][0]["landing"] == "2027-01-01T00:00Z"
+    # Landings are exactly step_h apart.
+    gaps = {times.index(b["landing"]) - times.index(a["landing"]) for a, b in zip(w["rows"], w["rows"][1:])}
+    assert gaps == {w["step_h"]}
+    # Re-score three landings by hand from the timeline and compare.
+    crit = {"mission_length_days": w["mission_days"], "usable_day": {"min_sun_hours": 12, "min_contact_hours": 4},
+            "max_dark_spell_hours": 18}
+    if (SHARED / "criteria.json").exists():
+        crit = json.loads((SHARED / "criteria.json").read_text())
+    n = int(w["mission_days"] * 24)
+    for row in (w["rows"][0], w["rows"][700], w["rows"][-1]):
+        i = times.index(row["landing"])
+        m = window_metrics([r["sun_frac"] for r in rows[i:i + n]], [r["earth_visible"] for r in rows[i:i + n]], crit)
+        assert m["usable_days"] == row["usable_days"] and m["longest_dark_h"] == row["longest_dark_h"]

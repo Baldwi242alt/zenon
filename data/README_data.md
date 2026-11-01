@@ -231,3 +231,28 @@ once, then replaced by the template. Without an API key every brief comes from t
 only from the facts. Which source each brief came from is recorded in `data/sites/scores_meta.json`
 (currently: template for all 9). Tests use a fake client to check that an invented "99%" is rejected and that
 a refusal falls back to the template.
+
+## Stage 8: landing windows (`shared/windows_SITE.json`)
+
+```bash
+python data/build_windows.py     # a few seconds
+```
+
+Every landing time across 2027, every 6 hours (1,421 per site, until the last landing whose 10-day mission still
+fits in the 2027 timeline), scored with the same rules as `scores.json`. About 200 KB per site. Feeds the
+landing-window heatmap and the cost-of-a-slip chart (a 1/2/3/7-day slip is 4/8/12/28 rows later).
+
+| Site | Landings the rover survives | Landings with all 10 days usable |
+| --- | --- | --- |
+| Nobile Rim 1 | 54.3% | 17.9% |
+| Mons Mouton | 48.4% | 17.7% |
+| de Gerlache Rim 2 | 45.3% | 12.2% |
+| Malapert Massif | 37.3% | 14.4% |
+| Haworth | 32.0% | 8.6% |
+| Slater Plain | 28.9% | 0.3% |
+| Peak near Cabeus B | 23.6% | 9.4% |
+| Nobile Rim 2 | 23.3% | 7.2% |
+| Mons Mouton Plateau | 13.6% | 6.0% |
+
+With the placeholder 18 h dark limit, most of the year is not survivable at any site: the landing date matters
+as much as the site. Slater Plain almost never has 10 usable days because Earth is in view only 32% of the time.
