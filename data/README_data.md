@@ -275,3 +275,29 @@ Moon highest in its sky, but only when Earth is also visible from the lunar site
 
 **Limits:** the Moon's centre is used (a south-pole site sits about 1,737 km from it, shifting elevations seen
 from Earth by up to about 0.3 degrees); antenna scheduling and other missions are ignored.
+
+## Stage 10: shadow grids for every site (`shared/grid_SITE.json`)
+
+```bash
+python data/build_grid.py --scan   # once: per-cell horizons for all sites + best windows (~10 min)
+python data/build_grid.py --all    # writes every site's grid at its best window (seconds, uses the cache)
+```
+
+Same method as Stage 6, one 64 x 64 x 336 grid per site, each at the window the scan scored best for that site
+(`data/sites/grid_window_options.csv`). 41 MB in total, 4.3-5.3 MB each, so the website should load only the
+selected site's grid.
+
+| Site | Window start | Cell-hours lit | Cells steeper than 15 degrees |
+| --- | --- | --- | --- |
+| Slater Plain (demo) | 2027-10-27 | 67% | 1% |
+| Nobile Rim 2 | 2027-12-03 | 84% | 0% |
+| Mons Mouton Plateau | 2027-10-06 | 77% | 3% |
+| Mons Mouton | 2027-10-13 | 58% | 5% |
+| Haworth | 2027-10-23 | 53% | 10% |
+| Malapert Massif | 2027-10-19 | 61% | 21% |
+| Nobile Rim 1 | 2027-11-15 | 54% | 26% |
+| Peak near Cabeus B | 2027-01-22 | 91% | 30% |
+| de Gerlache Rim 2 | 2027-10-21 | 53% | 35% |
+
+The steep sites (Cabeus B, de Gerlache Rim 2, Nobile Rim 1) are ridges and peaks: good for sunlight, hard for
+driving. That is a real trade-off worth showing in Rover Ops.

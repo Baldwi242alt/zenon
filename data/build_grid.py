@@ -3,6 +3,7 @@
 Run from the repo root:
   python data/build_grid.py --scan            # rank sites/windows for a dramatic demo
   python data/build_grid.py --site ID --start 2027-MM-DDTHH:00Z   # write one grid
+  python data/build_grid.py --all             # every site, at its best window from the scan
 
 Choosing the window (handbook B.11): the demo needs a 14-day window where
 shadows sweep across the grid, so that some cells stay dark longer than the
@@ -163,6 +164,7 @@ def main():
     ap.add_argument("--scan", action="store_true")
     ap.add_argument("--site")
     ap.add_argument("--start")
+    ap.add_argument("--all", action="store_true")
     args = ap.parse_args()
     sites = json.loads((SHARED / "sites.json").read_text())
     criteria, source = load_criteria()
@@ -178,6 +180,16 @@ def main():
     if args.site:
         site = next(s for s in sites if s["id"] == args.site)
         write_grid(site, near, far, args.start)
+    if args.all:
+        if not OPTIONS_OUT.exists():
+            raise SystemExit("run --scan first")
+        best = {}
+        with OPTIONS_OUT.open() as f:
+            for row in csv.DictReader(f):
+                best.setdefault(row["site"], row["window_start"])  # first row per site = its best
+        for site in sites:
+            print(f"{site['id']}: window from {best[site['id']]}")
+            write_grid(site, near, far, best[site["id"]])
 
 
 if __name__ == "__main__":
