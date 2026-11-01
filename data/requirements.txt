@@ -1,0 +1,5 @@
+numpy
+requests
+pyproj
+rasterio
+pytest

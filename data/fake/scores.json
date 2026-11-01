@@ -1,0 +1,43 @@
+{
+  "generated": "2026-11-01T11:30Z",
+  "window_start": "2027-02-01",
+  "window_end": "2027-02-07",
+  "sites": [
+    {
+      "site": "site_a",
+      "rank": 1,
+      "usable_days": 7.0,
+      "sun_hours": 168.0,
+      "contact_hours": 168.0,
+      "both_hours": 168.0,
+      "longest_dark_h": 0.0,
+      "survives": true,
+      "best_landing": "2027-02-01T00:00Z",
+      "brief": "FAKE DATA: placeholder brief. The real one is written by the AI from computed numbers only."
+    },
+    {
+      "site": "site_b",
+      "rank": 2,
+      "usable_days": 3.0,
+      "sun_hours": 148.0,
+      "contact_hours": 93.0,
+      "both_hours": 73.0,
+      "longest_dark_h": 20.0,
+      "survives": false,
+      "best_landing": "2027-02-01T00:00Z",
+      "brief": "FAKE DATA: placeholder brief. The real one is written by the AI from computed numbers only."
+    },
+    {
+      "site": "site_c",
+      "rank": 3,
+      "usable_days": 0.0,
+      "sun_hours": 79.0,
+      "contact_hours": 0.0,
+      "both_hours": 0.0,
+      "longest_dark_h": 89.0,
+      "survives": false,
+      "best_landing": "2027-02-01T00:00Z",
+      "brief": "FAKE DATA: placeholder brief. The real one is written by the AI from computed numbers only."
+    }
+  ]
+}
