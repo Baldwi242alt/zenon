@@ -2,7 +2,7 @@ import json
 import os
 import sys
 
-# Fix Python path so it can find the 'sunchaser' module
+# Tell Python to look in the current folder for the 'sunchaser' module
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from sunchaser.astar2d import astar_shortest_path
@@ -12,17 +12,23 @@ from sunchaser.sim import simulate_route
 def main():
     print("🚀 Starting Sunchaser Planner...")
     
-    # 1. Load the fake data we generated earlier
-    # (Assuming you run this from the root of the repo or inside planner/)
+    # Get the folder path for run.py
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    # Look for the JSON files INSIDE the 'fake' folder
+    grid_path = os.path.join(base_dir, "fake", "grid_fake.json")
+    rover_path = os.path.join(base_dir, "fake", "rover_fake.json")
+    
     try:
-        with open("fake/grid_fake.json", "r") as f:
+        with open(grid_path, "r") as f:
             grid = json.load(f)
-        with open("fake/rover_fake.json", "r") as f:
+        with open(rover_path, "r") as f:
             rover = json.load(f)
     except FileNotFoundError:
         print("❌ Error: Could not find grid_fake.json or rover_fake.json. Did you run make_fake.py?")
         return
 
+    # ... (Leave the rest of the file exactly as it is)
     # 2. Set Start and Target
     # Let's start on the left side and try to get to the right side
     start = (5, 5)    # (row, col)
