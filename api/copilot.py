@@ -18,8 +18,10 @@ How it stays grounded
 
 Three engines, tried in this order (the response format is the same for all):
   1. GEMINI (free tier) when GEMINI_API_KEY is set: Google's model picks the
-     tools and writes the answer. Model from GEMINI_MODEL, default
-     gemini-3.8-flash (free of charge on the free tier, Nov 2026).
+     tools and writes the answer. Models tried in order: gemini-3.5-flash,
+     gemini-3.5-flash-lite (or GEMINI_MODEL if set), moving on when one is
+     busy, over its free limit or slow; each request has 12 s and the whole
+     question 25 s, then the fact finder answers instead.
   2. CLAUDE (paid, optional) when ANTHROPIC_API_KEY is set: claude-opus-5-5,
      low effort, server-side refusal fallback on.
   3. FACT FINDER (no AI, always available): reads the question for site
@@ -44,10 +46,17 @@ from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 
 MODEL = "claude-opus-5-5"
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash")
+# Free-tier Gemini models, tried in order; we move down the list when one is busy (503), over its
+# free limit (429) or slow. gemini-3.8-flash is left out by default: in testing (Nov 2026) the free
+# tier either refused it as busy or left requests hanging. GEMINI_MODEL overrides the list.
+GEMINI_MODELS = ([os.environ["GEMINI_MODEL"]] if os.environ.get("GEMINI_MODEL")
+                 else ["gemini-3.5-flash", "gemini-3.5-flash-lite"])
+GEMINI_MODEL = GEMINI_MODELS[0]
 MAX_QUESTION_CHARS = 500
 MAX_TOOL_ROUNDS = 6
 RATE_LIMIT_PER_MIN = 10
+GEMINI_CALL_TIMEOUT_S = 12   # one request to Google
+GEMINI_BUDGET_S = 25         # the whole question; then the fact finder answers (Vercel stops at 60 s)
 
 SHARED = Path(__file__).resolve().parents[1] / "shared"
 if not SHARED.exists():  # Vercel runs functions from the project root
@@ -301,6 +310,7 @@ Rules:
   compute new numbers (no differences, ratios or percentages of your own).
 - If the data does not cover the question (other years, other sites, things not computed), say so.
 - Answer in 2-4 plain sentences. Mention site names, not ids. No markdown.
+- Write times like "19 Jun 2027, 18:00 UTC" and whole numbers without ".0".
 Mission rules: a usable day has enough sunlight and Earth contact; a landing "survives" if no dark spell
 is longer than the survivable limit."""
 
@@ -327,43 +337,61 @@ def gemini_tools():
             for name, (_, desc, props) in TOOLS.items()]
 
 
-def answer_with_gemini(question, site, client):
-    """Gemini tool loop (Interactions API, stateless). Raises EngineUnavailable on API trouble."""
-    from google.genai import errors
+def answer_with_gemini(question, site, client, models=None):
+    """Gemini tool loop (Interactions API, stateless).
 
+    The first request tries each model in order until one answers; the rest of
+    the conversation stays on that model (its steps carry model-specific
+    signatures). Raises EngineUnavailable if no model can answer; returns None
+    if the answer fails the numbers guard twice.
+    """
     prompt = question if not site else f"{question}\n(The user is looking at site id '{site}'.)"
     history = [{"type": "user_input", "content": [{"type": "text", "text": prompt}]}]
     evidence, facts = [question], []
-    try:
-        for attempt in range(2):
-            answer = ""
-            for _ in range(MAX_TOOL_ROUNDS):
-                inter = client.interactions.create(model=GEMINI_MODEL, store=False, input=history,
-                                                   tools=gemini_tools(), system_instruction=SYSTEM)
-                for step in inter.steps:
-                    history.append(step.model_dump())
-                calls = [st for st in inter.steps if st.type == "function_call"]
-                if not calls:
-                    answer = (inter.output_text or "").strip()
-                    break
-                for call in calls:
-                    text, f, _ = run_tool(call.name, dict(call.arguments or {}))
-                    evidence.append(text)
-                    facts.extend(f)
-                    history.append({"type": "function_result", "name": call.name, "call_id": call.id,
-                                    "result": [{"type": "text", "text": text}]})
-            ok = _checked(answer, evidence, facts)
-            if ok:
-                return ok
-            bad = ", ".join(unsupported_numbers(answer, evidence)) or "none"
-            history.append({"type": "user_input",
-                            "content": [{"type": "text", "text": GUARD_NUDGE.format(bad=bad)}]})
-    except errors.APIError as exc:      # 429 = free limit used up; others = service trouble
-        raise EngineUnavailable(f"Gemini error {exc.code}") from exc
-    except Exception as exc:            # network failures from the HTTP layer
-        if exc.__class__.__name__ in ("ConnectError", "ReadTimeout", "ConnectTimeout", "RemoteProtocolError"):
-            raise EngineUnavailable("could not reach Gemini") from exc
-        raise
+    candidates = list(models or GEMINI_MODELS)
+    model = None
+    deadline = time.time() + GEMINI_BUDGET_S
+
+    def create():
+        nonlocal model
+        tried = [model] if model else candidates
+        last = None
+        for m in tried:
+            left = deadline - time.time()
+            if left < 3:
+                raise EngineUnavailable("out of time")
+            try:
+                inter = client.interactions.create(model=m, store=False, input=history,
+                                                   tools=gemini_tools(), system_instruction=SYSTEM,
+                                                   timeout=min(GEMINI_CALL_TIMEOUT_S, left))
+                model = m
+                return inter
+            except Exception as exc:  # busy (503), over the free limit (429), retired model (404), network
+                last = exc
+        raise EngineUnavailable(f"no Gemini model available: {last}") from last
+
+    for attempt in range(2):
+        answer = ""
+        for _ in range(MAX_TOOL_ROUNDS):
+            inter = create()
+            for step in inter.steps:
+                history.append(step.model_dump())
+            calls = [st for st in inter.steps if st.type == "function_call"]
+            if not calls:
+                answer = (inter.output_text or "").strip()
+                break
+            for call in calls:
+                text, f, _ = run_tool(call.name, dict(call.arguments or {}))
+                evidence.append(text)
+                facts.extend(f)
+                history.append({"type": "function_result", "name": call.name, "call_id": call.id,
+                                "result": [{"type": "text", "text": text}]})
+        ok = _checked(answer, evidence, facts)
+        if ok:
+            return ok
+        bad = ", ".join(unsupported_numbers(answer, evidence)) or "none"
+        history.append({"type": "user_input",
+                        "content": [{"type": "text", "text": GUARD_NUDGE.format(bad=bad)}]})
     return None  # failed the guard twice
 
 
@@ -588,7 +616,7 @@ def respond(question, site, engine, client):
             out = answer_with_gemini(question, site, client)
             if out:
                 return out
-        except EngineUnavailable:
+        except Exception:  # EngineUnavailable or anything unexpected: never break the chat
             pass
     elif engine == "claude":
         import anthropic

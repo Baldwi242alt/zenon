@@ -198,3 +198,23 @@ def test_gemini_quota_used_up_falls_back_to_fact_finder():
     status, body = copilot.handle(json.dumps({"question": "Which site is best in June?"}).encode(),
                                   ip="g3", engine="gemini", client=FakeGemini(error=quota))
     assert status == 200 and "June 2027" in body["answer"]
+
+
+def test_busy_gemini_model_moves_to_the_next_one():
+    data, _ = copilot.tool_compare_sites("2027-06", [])
+    top = data["ranked"][0]
+    answer = f"{top['name']} is best in June with {top['usable_days']:g} usable days."
+    script = gemini_script([answer])
+    calls = []
+
+    def create(**kwargs):
+        calls.append(kwargs["model"])
+        if kwargs["model"] == "busy-model":
+            raise RuntimeError("503 high demand")
+        return script.queue.pop(0)
+
+    fake = SimpleNamespace(interactions=SimpleNamespace(create=create))
+    out = copilot.answer_with_gemini("Best site in June?", None, fake, models=["busy-model", "ok-model"])
+    assert out["answer"] == answer
+    # First call tried both; after that the conversation stays on the model that answered.
+    assert calls == ["busy-model", "ok-model", "ok-model"]

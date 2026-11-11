@@ -36,7 +36,8 @@ PROMPT = (
     "Facts for one candidate landing site (JSON):\n{facts}\n\n"
     "Write exactly three sentences for a mission manager: the best landing time, how many "
     "usable days that gives out of the mission length, and the main risk (long darkness or "
-    "little Earth contact). Copy every number exactly as it appears in the facts."
+    "little Earth contact). Copy every number exactly as it appears in the facts, and write whole "
+    "numbers without \".0\"."
 )
 
 NUMBER = re.compile(r"(?<![A-Za-z_])-?\d+(?:\.\d+)?")
@@ -116,7 +117,10 @@ def template_brief(f):
 
 # ---------------- Claude ----------------
 
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash")
+# Free-tier models tried in order (gemini-3.8-flash left out: busy or hanging on the free tier, Nov 2026).
+GEMINI_MODELS = ([os.environ["GEMINI_MODEL"]] if os.environ.get("GEMINI_MODEL")
+                 else ["gemini-3.5-flash", "gemini-3.5-flash-lite"])
+GEMINI_MODEL = GEMINI_MODELS[0]
 
 
 def get_client():
@@ -140,20 +144,21 @@ def get_client():
 def client_name(client):
     if client is None:
         return "template (no GEMINI_API_KEY or ANTHROPIC_API_KEY set)"
-    return f"Gemini ({GEMINI_MODEL}, free tier)" if hasattr(client, "interactions") else f"Claude ({MODEL})"
+    return (f"Gemini ({' / '.join(GEMINI_MODELS)}, free tier)" if hasattr(client, "interactions")
+            else f"Claude ({MODEL})")
 
 
 def gemini_brief(client, facts):
     """Ask Gemini for a brief. Returns the text, or None if it can't be used (e.g. free limit hit)."""
-    from google.genai import errors
-    try:
-        inter = client.interactions.create(
-            model=GEMINI_MODEL, store=False, system_instruction=SYSTEM,
-            input=PROMPT.format(facts=json.dumps(facts, indent=2)))
-    except errors.APIError as exc:
-        print(f"    Gemini error {exc.code}; using template")
-        return None
-    return (inter.output_text or "").strip() or None
+    for model in GEMINI_MODELS:
+        try:
+            inter = client.interactions.create(
+                model=model, store=False, system_instruction=SYSTEM,
+                input=PROMPT.format(facts=json.dumps(facts, indent=2)), timeout=60)
+            return (inter.output_text or "").strip() or None
+        except Exception as exc:  # busy, over the free limit, retired, network: try the next model
+            print(f"    {model} unavailable ({type(exc).__name__}); trying the next model")
+    return None
 
 
 def ai_brief(client, facts):
