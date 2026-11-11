@@ -16,13 +16,22 @@ How it stays grounded
   4. facts_used lists the facts whose values appear in the answer, so the
      website can show what the answer was built from.
 
-Model: claude-opus-5-5 at low effort, with server-side refusal fallback on.
-The tool loop is written by hand (not the SDK's tool runner) because we need
-to keep every tool result to build facts_used and run the guard.
+Three engines, tried in this order (the response format is the same for all):
+  1. GEMINI (free tier) when GEMINI_API_KEY is set: Google's model picks the
+     tools and writes the answer. Model from GEMINI_MODEL, default
+     gemini-3.8-flash (free of charge on the free tier, Nov 2026).
+  2. CLAUDE (paid, optional) when ANTHROPIC_API_KEY is set: claude-opus-5-5,
+     low effort, server-side refusal fallback on.
+  3. FACT FINDER (no AI, always available): reads the question for site
+     names, months, budgets and keywords, calls the same tools and fills in
+     sentences from their numbers. Used when no key is set, when the free
+     daily limit runs out, or when an AI answer fails the numbers guard.
+The tool loops are written by hand because every tool result is needed to
+build facts_used and run the guard.
 
-Deployment (Vercel, file-based Python function): needs the environment
-variable ANTHROPIC_API_KEY; dependencies in the repo-root requirements.txt;
-bundle limits in vercel.json. Without a key it answers 503.
+Deployment (Vercel, file-based Python function): set GEMINI_API_KEY in the
+project's environment variables (never in code); dependencies in the
+repo-root requirements.txt; bundle limits in vercel.json.
 """
 
 import json
@@ -35,6 +44,7 @@ from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 
 MODEL = "claude-opus-5-5"
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash")
 MAX_QUESTION_CHARS = 500
 MAX_TOOL_ROUNDS = 6
 RATE_LIMIT_PER_MIN = 10
@@ -281,7 +291,7 @@ def facts_in_answer(answer, facts):
     return out[:12]
 
 
-# ===================== the copilot loop =====================
+# ===================== shared prompt =====================
 
 SYSTEM = """You are Sunchaser's mission copilot for lunar south-pole landing planning.
 Answer ONLY from the results of your tools; they read Sunchaser's computed data (JPL Horizons
@@ -294,6 +304,70 @@ Rules:
 Mission rules: a usable day has enough sunlight and Earth contact; a landing "survives" if no dark spell
 is longer than the survivable limit."""
 
+GUARD_NUDGE = ("Your answer used numbers not found in the tool results: {bad}. "
+               "Rewrite it using only numbers copied exactly from the tool results.")
+
+
+class EngineUnavailable(Exception):
+    """The AI engine can't answer right now (no key, quota used up, network)."""
+
+
+def _checked(answer, evidence, facts):
+    """Numbers guard: the answer dict if every number is supported, else None."""
+    if answer and not unsupported_numbers(answer, evidence):
+        return {"answer": answer, "facts_used": facts_in_answer(answer, facts)}
+    return None
+
+
+# ===================== engine 1: Gemini (free tier) =====================
+
+def gemini_tools():
+    return [{"type": "function", "name": name, "description": desc,
+             "parameters": {"type": "object", "properties": props, "required": list(props)}}
+            for name, (_, desc, props) in TOOLS.items()]
+
+
+def answer_with_gemini(question, site, client):
+    """Gemini tool loop (Interactions API, stateless). Raises EngineUnavailable on API trouble."""
+    from google.genai import errors
+
+    prompt = question if not site else f"{question}\n(The user is looking at site id '{site}'.)"
+    history = [{"type": "user_input", "content": [{"type": "text", "text": prompt}]}]
+    evidence, facts = [question], []
+    try:
+        for attempt in range(2):
+            answer = ""
+            for _ in range(MAX_TOOL_ROUNDS):
+                inter = client.interactions.create(model=GEMINI_MODEL, store=False, input=history,
+                                                   tools=gemini_tools(), system_instruction=SYSTEM)
+                for step in inter.steps:
+                    history.append(step.model_dump())
+                calls = [st for st in inter.steps if st.type == "function_call"]
+                if not calls:
+                    answer = (inter.output_text or "").strip()
+                    break
+                for call in calls:
+                    text, f, _ = run_tool(call.name, dict(call.arguments or {}))
+                    evidence.append(text)
+                    facts.extend(f)
+                    history.append({"type": "function_result", "name": call.name, "call_id": call.id,
+                                    "result": [{"type": "text", "text": text}]})
+            ok = _checked(answer, evidence, facts)
+            if ok:
+                return ok
+            bad = ", ".join(unsupported_numbers(answer, evidence)) or "none"
+            history.append({"type": "user_input",
+                            "content": [{"type": "text", "text": GUARD_NUDGE.format(bad=bad)}]})
+    except errors.APIError as exc:      # 429 = free limit used up; others = service trouble
+        raise EngineUnavailable(f"Gemini error {exc.code}") from exc
+    except Exception as exc:            # network failures from the HTTP layer
+        if exc.__class__.__name__ in ("ConnectError", "ReadTimeout", "ConnectTimeout", "RemoteProtocolError"):
+            raise EngineUnavailable("could not reach Gemini") from exc
+        raise
+    return None  # failed the guard twice
+
+
+# ===================== engine 2: Claude (paid, optional) =====================
 
 def text_of(response):
     return " ".join(b.text for b in response.content if b.type == "text").strip()
@@ -309,11 +383,12 @@ def ask_claude(client, messages):
 
 
 def answer_question(question, site=None, client=None):
-    """Run the tool loop and the numbers guard. Returns the response dict."""
+    """Claude tool loop with the numbers guard. Returns the response dict (or a facts fallback)."""
     prompt = question if not site else f"{question}\n(The user is looking at site id '{site}'.)"
     messages = [{"role": "user", "content": prompt}]
     evidence, facts = [question], []
     for attempt in range(2):
+        response = None
         for _ in range(MAX_TOOL_ROUNDS):
             response = ask_claude(client, messages)
             if response.stop_reason == "refusal":
@@ -334,14 +409,153 @@ def answer_question(question, site=None, client=None):
                                 **({"is_error": True} if is_error else {})})
             messages.append({"role": "user", "content": results})
         answer = text_of(response)
-        bad = unsupported_numbers(answer, evidence)
-        if answer and not bad:
-            return {"answer": answer, "facts_used": facts_in_answer(answer, facts)}
-        messages.append({"role": "user", "content":
-                         f"Your answer used numbers not found in the tool results: {', '.join(bad) or 'none'}. "
-                         "Rewrite it using only numbers copied exactly from the tool results."})
+        ok = _checked(answer, evidence, facts)
+        if ok:
+            return ok
+        bad = ", ".join(unsupported_numbers(answer, evidence)) or "none"
+        messages.append({"role": "user", "content": GUARD_NUDGE.format(bad=bad)})
     return {"answer": "I couldn't produce an answer I could verify against the data, so here are the "
                       "facts I found instead.", "facts_used": facts[:12]}
+
+
+# ===================== engine 3: fact finder (no AI) =====================
+
+MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september",
+          "october", "november", "december"]
+SITE_WORDS = {  # words people use -> site id (longest phrases are checked first)
+    "mons mouton plateau": "mons_mouton_plateau", "mouton plateau": "mons_mouton_plateau",
+    "mons mouton": "mons_mouton", "mouton": "mons_mouton",
+    "nobile rim 1": "nobile_rim_1", "nobile 1": "nobile_rim_1",
+    "nobile rim 2": "nobile_rim_2", "nobile 2": "nobile_rim_2",
+    "de gerlache": "de_gerlache_rim_2", "gerlache": "de_gerlache_rim_2",
+    "cabeus": "cabeus_b_peak", "haworth": "haworth", "malapert": "malapert_massif", "slater": "slater_plain",
+}
+EXAMPLES = ["Which site is best in June?", "When should we land at Malapert in March?",
+            "How dark does Haworth get in August?", "What does a 2-day slip cost at Mons Mouton with a $50 million budget?"]
+
+
+def _find_sites(q):
+    found, text = [], q.lower()
+    for word in sorted(SITE_WORDS, key=len, reverse=True):
+        if word in text and SITE_WORDS[word] not in found:
+            found.append(SITE_WORDS[word])
+            text = text.replace(word, " ")
+    for sid in site_ids():
+        if sid in q.lower() and sid not in found:
+            found.append(sid)
+    return found
+
+
+def _find_month(q):
+    text = q.lower()
+    for i, name in enumerate(MONTHS):
+        if re.search(rf"\b({name}|{name[:3]})\b", text):
+            return f"2027-{i + 1:02d}"
+    m = re.search(r"2027-(0[1-9]|1[0-2])", q)
+    return m.group(0) if m else None
+
+
+UNIT = {"million": 1e6, "mil": 1e6, "m": 1e6, "billion": 1e9, "bn": 1e9, "b": 1e9,
+        "thousand": 1e3, "k": 1e3}
+
+
+def _find_budget(q):
+    """A money amount: '$50 million', '50m', 'budget of 2000000'. Ignores '2-day' style numbers."""
+    text = q.lower().replace(",", "")
+    # 1) a number with a currency sign or a size word right after it
+    m = re.search(r"(?:\$|usd\s*|eur\s*|€)\s*(\d+(?:\.\d+)?)\s*(million|mil|billion|bn|thousand|m|b|k)?\b", text) \
+        or re.search(r"\b(\d+(?:\.\d+)?)\s*(million|mil|billion|bn|thousand)\b", text)
+    # 2) or a plain number straight after the word "budget"
+    if not m:
+        m = re.search(r"budget\D{0,12}(\d+(?:\.\d+)?)\s*(million|mil|billion|bn|thousand|m|b|k)?\b", text)
+    if not m:
+        return None
+    return float(m.group(1)) * UNIT.get(m.group(2) or "", 1)
+
+
+def _days(x):
+    return f"{x:g}"
+
+
+def fact_finder(question, site=None):
+    """Answer common questions without AI. Every number comes straight from a tool."""
+    q = question.lower()
+    sites_named = _find_sites(question)
+    sid = sites_named[0] if sites_named else site
+    scores = load("scores.json")
+    month = _find_month(question) or scores["window_start"][:7]
+    month_name = MONTHS[int(month[5:]) - 1].capitalize()
+
+    if re.search(r"\b(slip|slips|slipped|slippage|delay|delayed|postpone|postponed)\b", q):
+        sid = sid or scores["sites"][0]["site"]
+        data, facts = tool_find_windows(sid, month, 0)
+        if not data["top"]:
+            return None
+        landing = data["top"][0]["landing"]
+        budget = _find_budget(question)
+        sdata, sfacts = tool_slip_cost(sid, landing, budget or 1.0)
+        parts = []
+        for s in sdata["slips"]:
+            bit = f"{s['slip_days']}-day slip: {_days(s['usable_days'])} usable days"
+            if budget and s["cost_per_usable_day"] is not None:
+                bit += f" ({s['cost_per_usable_day']:,} per usable day)"
+            parts.append(bit)
+        ans = (f"For {site_name(sid)}, starting from the best {month_name} landing on {fmt_time(landing)}: "
+               + "; ".join(parts) + ".")
+        if not budget:
+            ans += " Add your mission budget to the question to see the cost per usable day."
+            sfacts = [f for f in sfacts if "cost" not in f["label"]]
+        return {"answer": ans, "facts_used": facts[:2] + sfacts}
+
+    if sid and re.search(r"\b(dark|darkness|sun|sunlight|sunlit|light|contact|earth|comms?|radio|dsn)\b", q):
+        start = f"{month}-01"
+        end = f"{month}-{[31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][int(month[5:]) - 1]:02d}"
+        d, facts = tool_timeline_stats(sid, start, end)
+        ans = (f"In {month_name} 2027, {site_name(sid)} is sunlit {d['sunlit_pct']:g}% of the time and has "
+               f"Earth in view {d['earth_visible_pct']:g}% of the time. The longest dark spell is "
+               f"{d['longest_dark_h']} hours and the longest gap in Earth contact is {d['longest_contact_gap_h']} hours.")
+        return {"answer": ans, "facts_used": facts}
+
+    if sid and re.search(r"\b(when|land|landing|window|windows|date)\b", q):
+        d, facts = tool_find_windows(sid, month, 0)
+        if not d["top"]:
+            return None
+        b = d["top"][0]
+        ans = (f"The best {month_name} landing at {site_name(sid)} is {fmt_time(b['landing'])}: "
+               f"{_days(b['usable_days'])} usable days out of {_days(d['mission_days'])}, with a longest dark spell "
+               f"of {_days(b['longest_dark_h'])} hours ({'survivable' if b['survives'] else 'NOT survivable'}).")
+        return {"answer": ans, "facts_used": facts}
+
+    if len(sites_named) > 1 or re.search(r"\b(best|which site|compare|rank|ranking|top|where)\b", q):
+        d, facts = tool_compare_sites(month, sites_named if len(sites_named) > 1 else [])
+        top = d["ranked"][:3]
+        lines = [f"{r['rank_in_comparison']}. {r['name']} ({_days(r['usable_days'])} usable days, "
+                 f"{'survives' if r['survives'] else 'does not survive'})" for r in top]
+        ans = (f"For a landing in {month_name} 2027, the best sites are: " + "; ".join(lines) + ".")
+        return {"answer": ans, "facts_used": facts[:2 * len(top)]}
+
+    if sid:
+        d, facts = tool_get_site_summary(sid)
+        r = d["score"]
+        win = MONTHS[int(d["scores_window"][5:7]) - 1].capitalize()
+        ans = (f"{site_name(sid)} ranks {r['rank']} of {len(site_ids())} for {win} 2027, with its best landing on "
+               f"{fmt_time(r['best_landing'])} giving {_days(r['usable_days'])} usable days. Across 2027 it is sunlit "
+               f"{d['year_2027']['sunlit_pct']:g}% of the time and sees Earth {d['year_2027']['earth_visible_pct']:g}% of the time.")
+        return {"answer": ans, "facts_used": facts}
+
+    if re.search(r"\b(sites?|list|options|candidates)\b", q):
+        d, facts = tool_list_sites()
+        ans = "The 9 candidate sites are: " + ", ".join(x["name"] for x in d["sites"]) + "."
+        return {"answer": ans, "facts_used": []}
+    return None
+
+
+def answer_without_ai(question, site=None):
+    out = fact_finder(question, site)
+    if out:
+        return out
+    return {"answer": "I can answer questions about the 9 sites' landing dates, sunlight, Earth contact and the "
+                      "cost of a launch slip in 2027. Try: " + " / ".join(EXAMPLES), "facts_used": []}
 
 
 # ===================== HTTP handler (Vercel) =====================
@@ -356,14 +570,38 @@ def rate_limited(ip):
     return len(recent) >= RATE_LIMIT_PER_MIN
 
 
-def make_client():
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        return None
-    import anthropic
-    return anthropic.Anthropic()
+def make_engine():
+    """The best AI engine configured: ("gemini", client), ("claude", client) or (None, None)."""
+    if os.environ.get("GEMINI_API_KEY"):
+        from google import genai
+        return "gemini", genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+    if os.environ.get("ANTHROPIC_API_KEY"):
+        import anthropic
+        return "claude", anthropic.Anthropic()
+    return None, None
 
 
-def handle(body, ip="local", client=None):
+def respond(question, site, engine, client):
+    """Try the AI engine, fall back to the fact finder. Always returns a response dict."""
+    if engine == "gemini":
+        try:
+            out = answer_with_gemini(question, site, client)
+            if out:
+                return out
+        except EngineUnavailable:
+            pass
+    elif engine == "claude":
+        import anthropic
+        try:
+            out = answer_question(question, site, client)
+            if not out["answer"].startswith("I couldn't produce"):
+                return out
+        except (anthropic.APIStatusError, anthropic.APIConnectionError):
+            pass
+    return answer_without_ai(question, site)
+
+
+def handle(body, ip="local", engine=None, client=None):
     """Validate a request body and answer it. Returns (status, response dict)."""
     try:
         req = json.loads(body or b"{}")
@@ -377,18 +615,9 @@ def handle(body, ip="local", client=None):
         return 400, {"error": f"unknown site '{site}'"}
     if rate_limited(ip):
         return 429, {"error": "too many questions; try again in a minute"}
-    client = client or make_client()
-    if client is None:
-        return 503, {"error": "copilot not configured (ANTHROPIC_API_KEY missing)"}
-    import anthropic
-    try:
-        return 200, answer_question(q.strip(), site, client)
-    except anthropic.RateLimitError:
-        return 429, {"error": "the AI service is busy; try again shortly"}
-    except anthropic.APIStatusError as exc:
-        return 502, {"error": f"AI service error ({exc.status_code})"}
-    except anthropic.APIConnectionError:
-        return 502, {"error": "could not reach the AI service"}
+    if engine is None and client is None:
+        engine, client = make_engine()
+    return 200, respond(q.strip(), site, engine, client)
 
 
 class handler(BaseHTTPRequestHandler):

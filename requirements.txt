@@ -2,4 +2,5 @@
 # Keep this to what the function needs at runtime: no web framework here, or Vercel
 # would treat the whole project as a Python app. The data pipeline's own
 # dependencies are in data/requirements.txt.
+google-genai
 anthropic

@@ -4,3 +4,4 @@ pyproj
 rasterio
 pytest
 anthropic
+google-genai

@@ -54,10 +54,11 @@ def test_request_checks():
     assert copilot.handle(json.dumps({"question": "hi", "site": "atlantis"}).encode())[0] == 400
 
 
-def test_no_api_key_gives_503(monkeypatch):
+def test_no_api_key_falls_back_to_fact_finder(monkeypatch):
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-    status, body = copilot.handle(json.dumps({"question": "Best site in June?"}).encode(), ip="t503")
-    assert status == 503
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    status, body = copilot.handle(json.dumps({"question": "Which site is best in June?"}).encode(), ip="nokey")
+    assert status == 200 and "June 2027" in body["answer"] and body["facts_used"]
 
 
 # ---------- the loop, with a fake Claude ----------
@@ -111,3 +112,89 @@ def test_invented_number_is_caught_and_never_returned():
     # Claude was told which number was unsupported.
     nudges = [m["content"] for m in fake.calls[-1]["messages"] if isinstance(m["content"], str)]
     assert any("99.5" in n for n in nudges)
+
+
+# ---------- fact finder (no AI) ----------
+
+def test_fact_finder_answers_common_questions_from_tool_numbers():
+    best, _ = copilot.tool_compare_sites("2027-06", [])
+    out = copilot.answer_without_ai("Which site is best in June?")
+    assert best["ranked"][0]["name"] in out["answer"]
+
+    stats, _ = copilot.tool_timeline_stats("haworth", "2027-08-01", "2027-08-31")
+    out = copilot.answer_without_ai("How dark does Haworth get in August?")
+    assert f"{stats['longest_dark_h']} hours" in out["answer"]
+
+
+def test_fact_finder_reads_budgets_and_ignores_day_counts():
+    assert copilot._find_budget("2-day slip with a $50 million budget") == 50e6
+    assert copilot._find_budget("budget 2000000, what if it slips") == 2e6
+    assert copilot._find_budget("what does a 2-day slip cost") is None
+
+
+def test_site_names_are_matched_as_words():
+    # "Slater" contains "late"; it must not trigger the slip answer.
+    out = copilot.answer_without_ai("Compare Slater and Nobile Rim 1 in October")
+    assert "slip" not in out["answer"] and "Slater Plain" in out["answer"]
+
+
+def test_unknown_question_gets_suggestions():
+    out = copilot.answer_without_ai("What is the meaning of life?")
+    assert out["facts_used"] == [] and "Try:" in out["answer"]
+
+
+# ---------- Gemini path, with a fake client (no network) ----------
+
+class Step(SimpleNamespace):
+    def model_dump(self):
+        return dict(self.__dict__)
+
+
+class FakeGemini:
+    """Mimics client.interactions.create; returns scripted interactions in order."""
+
+    def __init__(self, interactions=None, error=None):
+        self.queue, self.calls, self.error = list(interactions or []), [], error
+        self.interactions = SimpleNamespace(create=self._create)
+
+    def _create(self, **kwargs):
+        self.calls.append(kwargs)
+        if self.error:
+            raise self.error
+        return self.queue.pop(0)
+
+
+def gemini_script(final_texts):
+    call = SimpleNamespace(steps=[Step(type="function_call", id="c1", name="compare_sites",
+                                       arguments={"month": "2027-06", "site_list": []})], output_text="")
+    finals = [SimpleNamespace(steps=[Step(type="model_output", text=t)], output_text=t) for t in final_texts]
+    return FakeGemini([call] + finals)
+
+
+def test_gemini_grounded_answer():
+    data, _ = copilot.tool_compare_sites("2027-06", [])
+    top = data["ranked"][0]
+    answer = f"{top['name']} is best in June with {top['usable_days']:g} usable days."
+    fake = gemini_script([answer])
+    status, body = copilot.handle(json.dumps({"question": "Best site in June?"}).encode(),
+                                  ip="g1", engine="gemini", client=fake)
+    assert status == 200 and body["answer"] == answer
+    assert fake.calls[0]["model"] == copilot.GEMINI_MODEL and fake.calls[0]["store"] is False
+    # The tool result went back to Gemini with the matching call id.
+    sent = fake.calls[1]["input"]
+    assert any(m.get("type") == "function_result" and m.get("call_id") == "c1" for m in sent)
+
+
+def test_gemini_invented_number_falls_back_to_fact_finder():
+    fake = gemini_script(["Cabeus gives 99.5 usable days.", "Still 99.5 usable days."])
+    status, body = copilot.handle(json.dumps({"question": "Which site is best in June?"}).encode(),
+                                  ip="g2", engine="gemini", client=fake)
+    assert status == 200 and "99.5" not in body["answer"] and "June 2027" in body["answer"]
+
+
+def test_gemini_quota_used_up_falls_back_to_fact_finder():
+    from google.genai import errors
+    quota = errors.ClientError(429, {"error": {"code": 429, "message": "quota", "status": "RESOURCE_EXHAUSTED"}})
+    status, body = copilot.handle(json.dumps({"question": "Which site is best in June?"}).encode(),
+                                  ip="g3", engine="gemini", client=FakeGemini(error=quota))
+    assert status == 200 and "June 2027" in body["answer"]

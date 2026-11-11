@@ -7,8 +7,9 @@ out of the generated text and checks that each one appears in the facts
 (allowing for normal rounding). If any number fails, we ask once more; if
 that fails too, we fall back to a sentence template filled from the facts.
 
-No API key? Then every brief comes from the template, and brief_source()
-says so. The Methods page states: "AI text is checked so it can't invent
+Which AI: Gemini's free tier when GEMINI_API_KEY is set (no cost), else
+Claude when ANTHROPIC_API_KEY is set. No key? Then every brief comes from the
+template, and scores_meta.json records that. The Methods page states: "AI text is checked so it can't invent
 numbers."
 
 API notes (Anthropic Python SDK):
@@ -115,15 +116,44 @@ def template_brief(f):
 
 # ---------------- Claude ----------------
 
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash")
+
+
 def get_client():
-    """An Anthropic client if credentials are configured, else None (template mode)."""
-    if not (os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")):
-        return None
+    """The AI client to use: Gemini (free tier) if GEMINI_API_KEY is set, else Claude if
+    ANTHROPIC_API_KEY is set, else None (template mode)."""
+    if os.environ.get("GEMINI_API_KEY"):
+        try:
+            from google import genai
+            return genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+        except ImportError:
+            pass
+    if os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN"):
+        try:
+            import anthropic
+            return anthropic.Anthropic()
+        except ImportError:
+            pass
+    return None
+
+
+def client_name(client):
+    if client is None:
+        return "template (no GEMINI_API_KEY or ANTHROPIC_API_KEY set)"
+    return f"Gemini ({GEMINI_MODEL}, free tier)" if hasattr(client, "interactions") else f"Claude ({MODEL})"
+
+
+def gemini_brief(client, facts):
+    """Ask Gemini for a brief. Returns the text, or None if it can't be used (e.g. free limit hit)."""
+    from google.genai import errors
     try:
-        import anthropic
-    except ImportError:
+        inter = client.interactions.create(
+            model=GEMINI_MODEL, store=False, system_instruction=SYSTEM,
+            input=PROMPT.format(facts=json.dumps(facts, indent=2)))
+    except errors.APIError as exc:
+        print(f"    Gemini error {exc.code}; using template")
         return None
-    return anthropic.Anthropic()
+    return (inter.output_text or "").strip() or None
 
 
 def ai_brief(client, facts):
@@ -159,8 +189,9 @@ def ai_brief(client, facts):
 def generate_brief(facts, client=None, attempts=2):
     """Brief for one site plus where it came from ("ai" or "template")."""
     if client is not None:
+        ask = gemini_brief if hasattr(client, "interactions") else ai_brief
         for _ in range(attempts):
-            text = ai_brief(client, facts)
+            text = ask(client, facts)
             if text and not check_numbers(text, facts):
                 return text, "ai"
     text = template_brief(facts)

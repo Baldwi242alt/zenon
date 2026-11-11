@@ -92,3 +92,28 @@ def test_refusal_falls_back_to_template():
     client = FakeClient(["", ""], stop_reason="refusal")
     _, source = briefs.generate_brief(FACTS, client)
     assert source == "template"
+
+
+# ---------- Gemini path for briefs, with a fake client ----------
+
+class FakeGeminiBriefs:
+    def __init__(self, texts):
+        self.texts, self.calls = list(texts), []
+        self.interactions = SimpleNamespace(create=self._create)
+
+    def _create(self, **kwargs):
+        self.calls.append(kwargs)
+        return SimpleNamespace(output_text=self.texts.pop(0))
+
+
+def test_gemini_brief_used_when_grounded():
+    good = "Land at Test Ridge on 19 Jun 2027 at 18:00 UTC. It gives 8 of 10 usable days. Darkness peaks at 9 hours."
+    client = FakeGeminiBriefs([good])
+    assert briefs.generate_brief(FACTS, client) == (good, "ai")
+    assert client.calls[0]["model"] == briefs.GEMINI_MODEL
+
+
+def test_gemini_brief_with_invented_number_falls_back():
+    client = FakeGeminiBriefs(["You get 12 usable days.", "You get 12 usable days."])
+    _, source = briefs.generate_brief(FACTS, client)
+    assert source == "template"

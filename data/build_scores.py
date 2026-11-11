@@ -29,7 +29,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "data"))
 
 from sunchaser_data import schema  # noqa: E402
-from sunchaser_data.briefs import generate_brief, get_client  # noqa: E402
+from sunchaser_data.briefs import client_name, generate_brief, get_client  # noqa: E402
 from sunchaser_data.metrics import PLACEHOLDER_CRITERIA  # noqa: E402
 from sunchaser_data.scores import best_landing, rank_sites, scan_landings  # noqa: E402
 
@@ -94,8 +94,7 @@ def main():
     ranked = rank_sites(per_month[month])
     names = {s["id"]: s["name"] for s in sites}
     client = get_client()
-    print("Briefs:", "Claude (" + "claude-opus-5-5" + ") with numbers guard" if client else
-          "template (no ANTHROPIC_API_KEY set)")
+    print("Briefs:", client_name(client), "with numbers guard" if client else "")
 
     out_sites, sources = [], {}
     for rank, sid, m in ranked:
