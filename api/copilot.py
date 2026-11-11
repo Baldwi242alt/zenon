@@ -50,7 +50,7 @@ MODEL = "claude-opus-5-5"
 # free limit (429) or slow. gemini-3.8-flash is left out by default: in testing (Nov 2026) the free
 # tier either refused it as busy or left requests hanging. GEMINI_MODEL overrides the list.
 GEMINI_MODELS = ([os.environ["GEMINI_MODEL"]] if os.environ.get("GEMINI_MODEL")
-                 else ["gemini-3.5-flash", "gemini-3.5-flash-lite"])
+                 else ["gemini-3.5-flash-lite", "gemini-3.5-flash"])
 GEMINI_MODEL = GEMINI_MODELS[0]
 MAX_QUESTION_CHARS = 500
 MAX_TOOL_ROUNDS = 6

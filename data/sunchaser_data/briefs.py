@@ -119,7 +119,7 @@ def template_brief(f):
 
 # Free-tier models tried in order (gemini-3.8-flash left out: busy or hanging on the free tier, Nov 2026).
 GEMINI_MODELS = ([os.environ["GEMINI_MODEL"]] if os.environ.get("GEMINI_MODEL")
-                 else ["gemini-3.5-flash", "gemini-3.5-flash-lite"])
+                 else ["gemini-3.5-flash-lite", "gemini-3.5-flash"])
 GEMINI_MODEL = GEMINI_MODELS[0]
 
 
@@ -154,7 +154,7 @@ def gemini_brief(client, facts):
         try:
             inter = client.interactions.create(
                 model=model, store=False, system_instruction=SYSTEM,
-                input=PROMPT.format(facts=json.dumps(facts, indent=2)), timeout=60)
+                input=PROMPT.format(facts=json.dumps(facts, indent=2)), timeout=30)
             return (inter.output_text or "").strip() or None
         except Exception as exc:  # busy, over the free limit, retired, network: try the next model
             print(f"    {model} unavailable ({type(exc).__name__}); trying the next model")
