@@ -16,7 +16,7 @@
 
 | Order | Engine | When it's used | Cost |
 | --- | --- | --- | --- |
-| 1 | **Gemini** (`gemini-3.8-flash` by default; override with `GEMINI_MODEL`) | `GEMINI_API_KEY` is set | Free tier (daily limits per Google project) |
+| 1 | **Gemini**: `gemini-3.5-flash-lite`, then `gemini-3.5-flash` (override with `GEMINI_MODEL`) | `GEMINI_API_KEY` is set | Free tier (daily limits per Google project, see below) |
 | 2 | Claude (`claude-opus-5-5`) | only if someone sets `ANTHROPIC_API_KEY` | Paid; optional, not needed |
 | 3 | **Fact finder** (no AI) | no key, the free limit is used up, the AI is unreachable, or an AI answer fails the numbers guard twice | Free, no limits |
 
@@ -28,6 +28,18 @@ and fills in sentences with their numbers. It understands questions like:
 - "How dark does Haworth get in August?"
 - "What does a 2-day slip cost at Mons Mouton with a $50 million budget?"
 Anything else gets a polite answer with these suggestions. So the copilot never breaks during a demo.
+
+**Free-tier reality (tested Nov 11, 2026):** `gemini-3.5-flash` (served as 3.6-flash) allows only
+**20 requests a day** on the free tier, and each copilot question uses 2-4 requests; `gemini-3.8-flash` was
+refused as busy or hung. `gemini-3.5-flash-lite` answered reliably, so it goes first. Each request gets 12 s
+and each question 25 s; after that the fact finder answers, so a slow free tier never leaves a spinner on
+screen. For the demo, treat the fact finder as the dependable path and Gemini as a bonus for free-form
+questions. Live answers seen: "When should we land at Malapert in March?" (Gemini, 15 s) and a polite refusal
+for "What will the weather be in Paris tomorrow?".
+
+**Briefs:** `build_scores.py` can write the 9 briefs with Gemini (`GEMINI_API_KEY` set), but the template
+briefs are kept: Flash-Lite's briefs passed the numbers guard yet misread the 18 h survivable limit as
+"the main risk", which would confuse a reader.
 
 ## How it stays grounded
 
