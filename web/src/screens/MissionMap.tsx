@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import basemap from '../assets/south_pole.jpg'
+import { Horizon } from '../components/Horizon'
 import { Panel, Status, Tile } from '../components/ui'
 import { fmtTime, useJson } from '../data'
 import { useStore } from '../store'
@@ -36,12 +37,13 @@ function Map({ sites, scores }: { sites: Site[]; scores: Scores }) {
   return (
     <>
       <div className="hero">
-        <h1>Where to land at the Moon's south pole, when, and how to keep your rover alive</h1>
+        <div className="eyebrow">Lunar south pole · NASA Artemis III candidate regions · 2027</div>
+        <h1>Here the Sun never climbs more than a degree or two. One ridge decides whether your rover lives.</h1>
         <p>
-          The Sun never rises more than about 1.5° here, so shadows kilometres long sweep the ground all month, and Earth dips
-          behind the terrain for days. Sunchaser computes sunlight and Earth contact hour by hour at NASA's nine Artemis III
-          candidate regions from JPL ephemerides and LRO laser-altimeter terrain, then plans rover routes that survive the shadows.
+          Sunchaser shows where to land, when, and how to drive so a solar rover survives the shadows: sunlight and Earth contact
+          hour by hour at nine sites, from JPL ephemerides and LRO laser-altimeter terrain.
         </p>
+        <HeroHorizon siteId={top.site} name={topName} month={scores.window_start.slice(0, 7)} />
         <div className="kpi-row">
           <Tile label={`best site, ${new Date(scores.window_start).toLocaleString('en', { month: 'long', timeZone: 'UTC' })} 2027`} value={topName} tone="sun" />
           <Tile label="candidate sites analysed" value={String(sites.length)} />
@@ -98,6 +100,12 @@ function Map({ sites, scores }: { sites: Site[]; scores: Scores }) {
       <SiteCard site={sel} row={row} />
     </>
   )
+}
+
+function HeroHorizon({ siteId, name, month }: { siteId: string; name: string; month: string }) {
+  const tl = useJson<Timeline>(`timeline_${siteId}.json`)
+  if (tl.state !== 'ready') return <div className="horizon status"><span className="spinner" /> Loading the horizon…</div>
+  return <Horizon rows={tl.data.rows.filter(r => r.time.startsWith(month))} title={`${name}, ${month}`} />
 }
 
 function SiteCard({ site, row }: { site: Site; row: Scores['sites'][number] }) {

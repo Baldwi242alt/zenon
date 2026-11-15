@@ -5,7 +5,7 @@ import type { Site } from '../types'
 export function Tile({ label, value, unit, tone, hint }: { label: string; value: string; unit?: string; tone?: string; hint?: string }) {
   return (
     <div className={`tile ${tone ?? ''}`} title={hint}>
-      <div className="tile-value">{value}{unit && <span className="tile-unit">{unit}</span>}</div>
+      <div className={`tile-value ${value.length > 9 ? 'text' : ''}`}>{value}{unit && <span className="tile-unit">{unit}</span>}</div>
       <div className="tile-label">{label}</div>
     </div>
   )

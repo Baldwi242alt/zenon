@@ -1,9 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "installCommand": "echo 'no install step: the copilot installs requirements.txt itself'",
-  "buildCommand": "echo 'no build step yet: serving the shared data files'",
-  "outputDirectory": "shared",
+  "installCommand": "cd web && npm install",
+  "buildCommand": "cd web && npm run build",
+  "outputDirectory": "web/dist",
+  "rewrites": [
+    { "source": "/((?!api/|assets/).*)", "destination": "/index.html" }
+  ],
   "functions": {
     "api/copilot.py": {
       "maxDuration": 60,

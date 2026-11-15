@@ -1,18 +1,21 @@
 /* Mission-control theme. Meaning colours are the same on every screen:
    sunlight = amber, Earth contact = blue, both = green, danger/frozen = red, terrain = grey. */
 :root {
-  --bg: #0b0f17; --panel: #121826; --panel-2: #182032; --line: #243049; --text: #e6ebf4; --muted: #8a96ad;
-  --sun: #f5a623; --sun-dim: rgba(245, 166, 35, 0.32); --earth: #4ea3ff; --both: #3ecf8e; --danger: #ff5d5d; --terrain: #9aa4b2;
-  --accent: #f5a623; --radius: 12px;
-  --mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  /* lunar night, low-sun amber, regolith grey */
+  --bg: #0c111b; --panel: #121a28; --panel-2: #172133; --line: #233047; --text: #e8ecf3; --muted: #8b97ab;
+  --sun: #f2a541; --sun-dim: rgba(242, 165, 65, 0.3); --earth: #5da9e9; --both: #4cc38a; --danger: #f0605d; --terrain: #a9a69c;
+  --accent: #f2a541; --radius: 10px;
+  --mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  --display: 'IBM Plex Sans Condensed', 'IBM Plex Sans', sans-serif;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
 html, body, #root { margin: 0; height: 100%; }
-body { background: var(--bg); color: var(--text); font: 15px/1.5 Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { background: var(--bg); color: var(--text); font: 15px/1.55 'IBM Plex Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
 a { color: var(--earth); }
-h1, h2, h3 { margin: 0; letter-spacing: -0.01em; }
-h1 { font-size: 26px; } h2 { font-size: 20px; } h3 { font-size: 15px; font-weight: 600; }
+h1, h2, h3 { margin: 0; font-family: var(--display); letter-spacing: 0; }
+.eyebrow { font: 500 12px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--sun); }
+h1 { font-size: 34px; line-height: 1.12; font-weight: 600; } h2 { font-size: 26px; font-weight: 600; } h3 { font-size: 16px; font-weight: 600; }
 .mono, .tile-value, .axis, td.num { font-family: var(--mono); }
 
 /* layout */
@@ -82,7 +85,7 @@ tr.selected td { background: rgba(245, 166, 35, 0.08); }
 .map svg { position: absolute; inset: 0; width: 100%; height: 100%; }
 .marker circle.ring { fill: none; stroke: var(--sun); stroke-width: 2; }
 .marker circle.dot { fill: var(--sun); }
-.marker text { font: 600 13px Inter, sans-serif; fill: #fff; paint-order: stroke; stroke: rgba(0, 0, 0, 0.8); stroke-width: 3px; }
+.marker text { font: 600 14px 'IBM Plex Sans Condensed', sans-serif; fill: #fff; paint-order: stroke; stroke: rgba(0, 0, 0, 0.8); stroke-width: 3px; }
 .marker.sel circle.ring { stroke: #fff; stroke-width: 3; }
 .marker { cursor: pointer; }
 .site-list li { list-style: none; display: grid; grid-template-columns: 28px 1fr auto; gap: 8px; align-items: center; padding: 8px; border-radius: 8px; cursor: pointer; }
@@ -153,3 +156,20 @@ tr.selected td { background: rgba(245, 166, 35, 0.08); }
   .heat-rows { grid-template-columns: 110px 1fr; }
   .tile-value { font-size: 20px; }
 }
+
+/* signature: horizon panorama */
+.horizon { position: relative; margin: 18px 0 4px; }
+.horizon svg { width: 100%; height: auto; display: block; overflow: hidden; }
+.horizon .ridge { fill: #1c2433; stroke: var(--terrain); stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+.horizon .track-lit { stroke: var(--sun); stroke-width: 2.4; fill: none; vector-effect: non-scaling-stroke; }
+.horizon .track-dark { stroke: var(--sun); stroke-width: 1.4; stroke-dasharray: 3 4; opacity: 0.35; fill: none; vector-effect: non-scaling-stroke; }
+.horizon .sun { fill: var(--sun); filter: drop-shadow(0 0 8px var(--sun)); }
+.horizon .cap { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font: 12px var(--mono); color: var(--muted); margin-top: 6px; }
+.hero h1 { font-size: 40px; max-width: 900px; }
+@media (max-width: 900px) { .hero h1 { font-size: 28px; } }
+:focus-visible { outline: 2px solid var(--sun); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+.tile-value.text { font-family: var(--display); font-size: 19px; line-height: 1.25; }
+.app > div, .main, .panel, .hero { min-width: 0; }
+.cap span { overflow-wrap: anywhere; }
