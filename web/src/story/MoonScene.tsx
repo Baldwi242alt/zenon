@@ -31,9 +31,9 @@ export function MoonScene({ progress }: { progress: number }) {
     scene.add(tilt)
 
     // Low, warm sun from the side: the terminator runs across the globe like the polar dawn.
-    const sun = new THREE.DirectionalLight(0xfff1dc, 3.2)
+    const sun = new THREE.DirectionalLight(0xfff1dc, 4.4)
     scene.add(sun)
-    scene.add(new THREE.AmbientLight(0x6b7fa3, 0.12))
+    scene.add(new THREE.AmbientLight(0x6b7fa3, 0.3))
 
     // Stars.
     const starGeo = new THREE.BufferGeometry()

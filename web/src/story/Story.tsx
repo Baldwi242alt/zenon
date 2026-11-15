@@ -1,123 +1,199 @@
-import { lazy, Suspense, useMemo, useRef } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Horizon } from '../components/Horizon'
-import { useJson } from '../data'
+import { useJson, useRover } from '../data'
 import type { Grid, RouteFile, Scores, Timeline } from '../types'
+import im2Launch from '../assets/nasa/im2_launch.jpg'
+import earthrise from '../assets/nasa/lro_earthrise.jpg'
+import lrocPole from '../assets/nasa/lroc_south_pole.jpg'
+import roverRidge from '../assets/viz/rover_ridge.jpg'
 import { MoonScene } from './MoonScene'
+import { Scrub } from './Scrub'
 import { useReveal, useSectionProgress } from './useScroll'
+import './story.css'
 
 const TerrainScene = lazy(() => import('./TerrainScene').then(m => ({ default: m.TerrainScene })))
 
-// The landing page: a scroll story, then the tools.
+// Frame sequences extracted from the Higgsfield visualizations (see web/src/assets/viz/README.md).
+const byName = (g: Record<string, string>) => Object.keys(g).sort().map(k => g[k])
+const SHADOW_FRAMES = byName(import.meta.glob('../assets/viz/shadow/*.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>)
+const ROVER_FRAMES = byName(import.meta.glob('../assets/viz/rover/*.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>)
+
+// The landing page, in the style of our Celestial Archive: an editorial scroll story about the
+// lunar south pole, built on NASA data and imagery, that hands off to the planning tools.
 export default function Story() {
   return (
-    <div className="story">
-      <header className="story-nav">
-        <Link to="/" className="story-brand"><span className="brand-dot" /> Sunchaser</Link>
-        <nav>
-          <Link to="/map">Sites</Link><Link to="/light">Light</Link><Link to="/rover">Rover</Link><Link to="/business">Business</Link>
-          <Link to="/copilot" className="story-cta">Ask the copilot</Link>
-        </nav>
-      </header>
-
+    <div className="ca">
+      <Nav />
       <Hero />
-
-      <Chapter eyebrow="The problem" title="Land in the wrong place, at the wrong time, or drive the wrong way, and your robot freezes.">
-        A solar rover in shadow gets no power and must burn 60 W on heaters just to survive. Commercial landers are heading to the south
-        pole now, and surface days are the most expensive days of any mission.
-      </Chapter>
-
-      <HorizonChapter />
-
-      <Numbers />
-
-      <RoverChapter />
-
-      <Chapter eyebrow="What it's worth" title="A 3-day launch slip at Malapert halves the usable days, and doubles what each one costs.">
-        Sunchaser scores every landing time in 2027, so a mission team can see what a slip costs before it happens. The business screen
-        turns your own budget into cost per usable day.
-        <div className="cta-row"><Link className="btn primary" to="/windows">See every landing window</Link><Link className="btn" to="/business">Business case</Link></div>
-      </Chapter>
-
-      <Chapter eyebrow="Checked against reality" title="It agrees with NASA's own maps, and with the landers that went there.">
-        Our sunlight and Earth-visibility averages correlate 0.98 and 0.99 with NASA's published LOLA illumination maps. At the IM-1 and
-        IM-2 landing sites the model shows the Sun up and Earth in view, as both landers needed. Every limit is stated on the Methods page.
-        <div className="cta-row"><Link className="btn" to="/methods">How it's computed</Link></div>
-      </Chapter>
-
-      <section className="finale">
-        <h2 className="big">Plan your landing.</h2>
-        <p className="lede">Nine NASA Artemis III candidate regions. Every hour of 2027. Real terrain, real ephemerides.</p>
-        <div className="tools">
-          {TOOLS.map(([to, name, what]) => (
-            <Link key={to} to={to}><Tilt className="tool"><b>{name}</b><span>{what}</span><i>Open →</i></Tilt></Link>
-          ))}
-        </div>
-        <p className="foot">Data: JPL Horizons, LRO LOLA, NASA Goddard PGDA. The globe beyond 75° S is illustrative; the south polar cap is real LOLA terrain. Team Zenon: Baldwin, Harril, Dhiran.</p>
-      </section>
+      <Survey />
+      <ShadowFeature />
+      <HorizonFeature />
+      <RoverIntro />
+      <RoverFeature />
+      <Results />
+      <Business />
+      <Validation />
+      <Tools />
+      <Footer />
     </div>
   )
 }
 
-// Sticky hero: the Moon turns its south pole toward you as you scroll; a ring shows the Sun's
-// path skimming the polar horizon. Kept in its own component so scroll updates re-render only this.
-function Hero() {
-  const heroRef = useRef<HTMLElement>(null)
-  const heroP = useSectionProgress(heroRef)
+function Nav() {
   return (
-    <section ref={heroRef} className="sticky-wrap" style={{ height: '260vh' }}>
-        <div className="sticky">
-          <MoonScene progress={heroP} />
-          <div className="orbit" style={{ transform: `translate(-50%, -50%) scale(${1 + heroP * 0.5}) rotateX(76deg)`, opacity: 1 - heroP * 1.4 }} aria-hidden="true">
-            <div className="orbit-sun" />
-          </div>
-          <div className="hero-copy" style={{ opacity: 1 - heroP * 2.2, transform: `translateY(${-heroP * 120}px)` }}>
-            <div className="eyebrow">Team Zenon · NASA Space Apps 2026</div>
-            <h1 className="mega">Sunchaser</h1>
-            <p className="lede">Where to land at the Moon's south pole, when, and how to keep your rover alive.</p>
-            <p className="hint">Scroll · drag the Moon</p>
-          </div>
-          <div className="hero-copy second" style={{ opacity: Math.max(0, Math.min(1, (heroP - 0.45) * 3)) }}>
-            <h2 className="big">At the south pole the Sun never climbs more than 1.5°.</h2>
-            <p className="lede">It circles the horizon once a month. Every hill throws a shadow kilometres long, and the shadows never stop moving.</p>
-          </div>
+    <header className="ca-nav">
+      <Link to="/" className="ca-brand"><span className="ca-brand-mark" aria-hidden="true" />SUNCHASER</Link>
+      <nav aria-label="Main">
+        <Link to="/map">Sites</Link><Link to="/light">Light</Link><Link to="/windows">Windows</Link>
+        <Link to="/rover">Rover</Link><Link to="/business">Business</Link><Link to="/methods">Methods</Link>
+        <Link to="/copilot" className="ca-nav-cta">Ask the copilot</Link>
+      </nav>
+    </header>
+  )
+}
+
+// Sticky hero: the real LRO Moon turns its south pole toward you as you scroll.
+function Hero() {
+  const ref = useRef<HTMLElement>(null)
+  const p = useSectionProgress(ref)
+  const second = Math.max(0, Math.min(1, (p - 0.42) * 3))
+  return (
+    <section ref={ref} className="ca-hero" style={{ height: '250vh' }}>
+      <div className="ca-sticky">
+        <div className="ca-hero-glow" style={{ opacity: 0.6 + p * 0.4 }} />
+        <div className="ca-hero-moon"><MoonScene progress={p} /></div>
+        <div className="ca-hero-copy" style={{ opacity: 1 - p * 2.4, transform: `translateY(${-p * 80}px)` }}>
+          <p className="ca-eyebrow">Team Zenon · NASA Space Apps 2026 · Lunar Landing Site Navigator</p>
+          <h1 className="ca-title">SUNCHASER</h1>
+          <p className="ca-subtitle">The Sun-Skimming Pole</p>
+          <p className="ca-hint">Scroll to descend · drag to turn the Moon</p>
         </div>
+        <div className="ca-hero-copy second" style={{ opacity: second, transform: `translateY(${(1 - second) * 40}px)` }}>
+          <p className="ca-eyebrow">Interactive globe · LRO camera mosaic</p>
+          <h2 className="ca-h1">Turn the Moon.<br />Find the light.</h2>
+          <p className="ca-body">At the south pole the Sun never climbs more than about 1.5° above the horizon. It circles the sky once a month,
+            skimming the crater rims. Land in the right place and it almost never sets. Land in the wrong one and your robot freezes.</p>
+        </div>
+      </div>
     </section>
   )
 }
 
-// A card that tilts toward the pointer (CSS 3D transform; no React state, so it costs nothing).
-function Tilt({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  const move = (e: React.PointerEvent<HTMLDivElement>) => {
-    const el = e.currentTarget, r = el.getBoundingClientRect()
-    el.style.setProperty('--ry', `${((e.clientX - r.left) / r.width - 0.5) * 14}deg`)
-    el.style.setProperty('--rx', `${-((e.clientY - r.top) / r.height - 0.5) * 14}deg`)
-  }
-  const leave = (e: React.PointerEvent<HTMLDivElement>) => { e.currentTarget.style.setProperty('--rx', '0deg'); e.currentTarget.style.setProperty('--ry', '0deg') }
-  return <div className={`tilt ${className}`} onPointerMove={move} onPointerLeave={leave}><div className="tilt-inner">{children}</div></div>
-}
-
-const TOOLS: [string, string, string][] = [
-  ['/map', 'Compare sites', 'Nine regions ranked by usable days, on the real LOLA map'],
-  ['/light', 'Sun and Earth', 'Hour by hour: sunlight, Earth contact, Deep Space Network'],
-  ['/windows', 'Landing windows', 'Every landing time in 2027, and what a slip costs'],
-  ['/rover', 'Rover ops', 'Shortest path versus Sunchaser, with survival odds'],
-  ['/business', 'Business case', 'Your budget, turned into cost per usable day'],
-  ['/copilot', 'Mission copilot', 'Ask in plain English; answers cite the computed numbers'],
+// Editorial survey with a sticky index, as on the Saturn and Mars pages.
+const RECORDS = [
+  { id: 'sun', title: 'The Sun barely rises' },
+  { id: 'shadow', title: 'Shadows that never stop moving' },
+  { id: 'earth', title: 'Earth on the horizon' },
+  { id: 'cold', title: 'The cold is lethal' },
+  { id: 'now', title: 'Landers are going now' },
 ]
 
-function Chapter({ eyebrow, title, children }: { eyebrow: string; title: string; children: React.ReactNode }) {
-  const ref = useReveal<HTMLElement>()
+function Survey() {
+  const [active, setActive] = useState('sun')
+  useEffect(() => {
+    const io = new IntersectionObserver(es => es.forEach(e => e.isIntersecting && setActive(e.target.id)), { rootMargin: '-45% 0px -50% 0px' })
+    RECORDS.forEach(r => { const el = document.getElementById(r.id); if (el) io.observe(el) })
+    return () => io.disconnect()
+  }, [])
   return (
-    <section ref={ref} className="chapter reveal">
-      <div className="eyebrow">{eyebrow}</div>
-      <h2 className="big">{title}</h2>
-      <div className="lede">{children}</div>
+    <section className="ca-section ca-survey">
+      <div className="ca-records">
+        <Record id="sun" n="01" title="The Sun barely rises">
+          The Moon's spin axis is tilted only about 1.5° from the plane of Earth's orbit, so at the pole the Sun never climbs more than about
+          1.5° above a flat horizon. It is a disk half a degree wide, so near the horizon terrain often hides part of it. Sunchaser tracks the
+          visible fraction of the Sun's disk, hour by hour, not just whether it is up.
+        </Record>
+        <Record id="shadow" n="02" title="Shadows that never stop moving"
+          figure={<Figure src={lrocPole} tag="LROC WAC · South pole mosaic" credit="NASA/GSFC/Arizona State University" alt="LRO camera mosaic of the lunar south pole, with long shadows filling the craters" />}>
+          With the Sun this low, every hill throws a shadow kilometres long. One lunar day lasts about 29.5 Earth days, so a ridge can stay lit
+          for weeks while the crater beside it is dark for days. This is the real south pole, photographed by the Lunar Reconnaissance Orbiter.
+        </Record>
+        <Record id="earth" n="03" title="Earth on the horizon"
+          figure={<Figure src={earthrise} tag="LRO · Earthrise over Compton crater" credit="NASA/GSFC/Arizona State University" alt="Earth rising over the lunar horizon, photographed by LRO" />}>
+          A lander talks to Earth directly, through NASA's Deep Space Network dishes at Goldstone, Madrid and Canberra. From the south pole Earth
+          sits low on the horizon and wobbles about ±6.7° over a month. At many sites terrain blocks it for days at a time.
+        </Record>
+        <Record id="cold" n="04" title="The cold is lethal">
+          In shadow a solar rover gets no power and must spend its battery on heaters just to survive. At walking pace, keeping warm costs more
+          energy than climbing hills. A route that is short on the map can be fatal if it crosses the wrong shadow at the wrong hour.
+        </Record>
+        <Record id="now" n="05" title="Landers are going now"
+          figure={<Figure src={im2Launch} tag="CLPS IM-2 liftoff · 26 Feb 2025" credit="NASA" alt="Night launch of the Intuitive Machines IM-2 mission" tall />}>
+          NASA's Commercial Lunar Payload Services pay companies to deliver robots to the Moon. Intuitive Machines landed IM-1 near the south pole
+          in February 2024 and IM-2 in March 2025. Every one of those missions has a fixed budget and a limited number of working days.
+        </Record>
+      </div>
+      <aside className="ca-index">
+        <p className="ca-eyebrow">Lunar south pole</p>
+        <h3 className="ca-h3">Where the Sun never sets</h3>
+        <p className="ca-small">Everything here is drawn from NASA data. Follow the index to move through the survey.</p>
+        <ol className="ca-index-list">
+          {RECORDS.map(r => (
+            <li key={r.id} className={active === r.id ? 'on' : ''}>
+              <a href={`#${r.id}`}>{r.title}</a>{active === r.id && <span className="ca-reading">reading</span>}
+            </li>
+          ))}
+        </ol>
+        <Specs cells={[['Highest Sun', '≈ 1.5°'], ['Lunar day', '29.5 Earth days'], ['Gravity', '1.62 m/s²'], ['Earth swing', '± 6.7°']]} />
+      </aside>
     </section>
   )
 }
 
-function HorizonChapter() {
+function Record({ id, n, title, children, figure }: { id: string; n: string; title: string; children: React.ReactNode; figure?: React.ReactNode }) {
+  const ref = useReveal<HTMLElement>()
+  return (
+    <article ref={ref} id={id} className="ca-record reveal">
+      <p className="ca-record-n">Record {n}</p>
+      <h2 className="ca-h2">{title}</h2>
+      <p className="ca-body">{children}</p>
+      {figure}
+    </article>
+  )
+}
+
+function Figure({ src, tag, credit, alt, tall }: { src: string; tag: string; credit: string; alt: string; tall?: boolean }) {
+  return (
+    <figure className={`ca-figure ${tall ? 'tall' : ''}`}>
+      <img src={src} alt={alt} loading="lazy" />
+      <span className="ca-tag">{tag}</span>
+      <figcaption>Image: {credit}</figcaption>
+    </figure>
+  )
+}
+
+function Specs({ cells }: { cells: [string, string][] }) {
+  return <div className="ca-specs">{cells.map(([k, v]) => <div key={k}><span>{k}</span><b>{v}</b></div>)}</div>
+}
+
+// Scroll-scrubbed visualization of shadows sweeping across polar terrain.
+function ShadowFeature() {
+  const ref = useRef<HTMLElement>(null)
+  const p = useSectionProgress(ref)
+  return (
+    <section ref={ref} className="ca-scrub-wrap" style={{ height: SHADOW_FRAMES.length ? '300vh' : 'auto' }}>
+      <div className={SHADOW_FRAMES.length ? 'ca-sticky' : ''}>
+        <div className="ca-scrub-head">
+          <p className="ca-eyebrow center">Special feature · Shadow sequence</p>
+          <h2 className="ca-display">Watch the light move.</h2>
+          <p className="ca-body center">Scroll to move time forward. The Sun slides sideways along the horizon, and the shadows sweep with it.</p>
+        </div>
+        <div className="ca-frame">
+          {SHADOW_FRAMES.length
+            ? <Scrub frames={SHADOW_FRAMES} progress={p} alt="Visualization: shadows sweeping across polar terrain as the low Sun moves along the horizon" />
+            : <img src={roverRidge} alt="" className="scrub" />}
+          <span className="ca-tag tl">Polar day · time-lapse</span>
+          <span className="ca-tag br">Illustrative · Higgsfield visualization</span>
+          <div className="ca-progress"><i style={{ width: `${p * 100}%` }} /></div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// The real thing: our terrain horizon and the Sun's computed path.
+function HorizonFeature() {
   const ref = useReveal<HTMLElement>()
   const scores = useJson<Scores>('scores.json')
   const site = scores.state === 'ready' ? scores.data.sites[0].site : null
@@ -125,28 +201,51 @@ function HorizonChapter() {
   const month = scores.state === 'ready' ? scores.data.window_start.slice(0, 7) : ''
   const rows = useMemo(() => (tl.state === 'ready' ? tl.data.rows.filter(r => r.time.startsWith(month)) : null), [tl, month])
   return (
-    <section ref={ref} className="chapter wide reveal">
-      <div className="eyebrow">Real terrain, real Sun</div>
-      <h2 className="big">One ridge decides whether you have power.</h2>
-      <p className="lede">This is the actual horizon around Peak near Cabeus B, ray-cast 150 km out over NASA laser-altimeter terrain, with the Sun's
-        real path for June 2027. Where the Sun slips behind the ridge, the site goes dark.</p>
-      {rows && <Horizon rows={rows} title="Peak near Cabeus B, June 2027" />}
+    <section ref={ref} className="ca-section ca-feature reveal">
+      <div className="ca-split">
+        <div>
+          <p className="ca-eyebrow">Computed · LRO LOLA terrain · JPL Horizons</p>
+          <h2 className="ca-h1">Now the real one.</h2>
+        </div>
+        <p className="ca-body">This is the true horizon around Peak near Cabeus B, ray-cast 150 km out over NASA's laser-altimeter terrain with the
+          Moon's curvature included, and the Sun's real path through June 2027. Where the Sun's track dips behind the ridge, the site goes dark.</p>
+      </div>
+      {rows && <div className="ca-horizon"><Horizon rows={rows} title="Peak near Cabeus B · June 2027" /></div>}
     </section>
   )
 }
 
-function Numbers() {
-  const ref = useReveal<HTMLElement>()
+// Rover introduction: a scrubbed visualization beside the reference rover's numbers.
+function RoverIntro() {
+  const ref = useRef<HTMLElement>(null)
+  const p = useSectionProgress(ref)
+  const { rover } = useRover()
+  const peak = 1361 * rover.panel.area_m2 * rover.panel.efficiency
   return (
-    <section ref={ref} className="numbers reveal">
-      <Tilt><b>9</b><span>NASA Artemis III candidate regions, each at its best-lit published landing point</span></Tilt>
-      <Tilt><b>8,760</b><span>hours of Sun and Earth visibility computed for every site in 2027</span></Tilt>
-      <Tilt><b>14–54%</b><span>of landing times are survivable, depending on the site. When matters as much as where.</span></Tilt>
+    <section ref={ref} className="ca-scrub-wrap" style={{ height: ROVER_FRAMES.length ? '220vh' : 'auto' }}>
+      <div className={`ca-rover ${ROVER_FRAMES.length ? 'ca-sticky' : ''}`}>
+        <div className="ca-frame wide">
+          {ROVER_FRAMES.length
+            ? <Scrub frames={ROVER_FRAMES} progress={p} alt="Visualization: a solar rover with a vertical panel driving along a sunlit polar ridge" />
+            : <img src={roverRidge} alt="Visualization: a solar rover with a vertical panel on a sunlit polar ridge" className="scrub" />}
+          <span className="ca-tag br">Illustrative · Higgsfield visualization</span>
+        </div>
+        <div className="ca-rover-copy">
+          <p className="ca-eyebrow">The reference rover</p>
+          <h2 className="ca-h2">Panels stand up, because the Sun is on the horizon.</h2>
+          <p className="ca-body">South-pole rovers carry vertical, sun-tracking panels. Our energy model counts solar input, avionics, survival
+            heaters, and drive power from slope and rolling resistance, hour by hour.</p>
+          <Specs cells={[['Peak panel power', `${Math.round(peak)} W`], ['Battery', `${rover.battery.capacity_wh.toLocaleString()} Wh`],
+            ['Heaters in shadow', `${rover.power_w.heater_dark} W`], ['Speed', `${rover.drive.speed_m_per_h} m/h`]]} />
+          <p className="ca-small">Reference values from the project brief.</p>
+        </div>
+      </div>
     </section>
   )
 }
 
-function RoverChapter() {
+// Slater Plain in 3D: scroll drives mission time while both rovers drive their planned routes.
+function RoverFeature() {
   const ref = useRef<HTMLElement>(null)
   const p = useSectionProgress(ref)
   const grid = useJson<Grid>('grid_slater_plain.json')
@@ -161,32 +260,104 @@ function RoverChapter() {
     if (!route) return 0
     let i = 0
     while (i + 1 < route.steps.length && route.steps[i + 1].t_h <= t) i++
-    return route.steps[i].battery_wh / 20
+    return (100 * route.steps[i].battery_wh) / route.steps[0].battery_wh
   }
-  const shortFrozen = short && !short.survived && t >= short.duration_h
-  const fastArrived = fast && t >= fast.duration_h
+  const shortFrozen = !!short && !short.survived && t >= short.duration_h
+  const fastArrived = !!fast && t >= fast.duration_h
   return (
-    <section ref={ref} className="sticky-wrap" style={{ height: '320vh' }}>
-      <div className="sticky">
+    <section ref={ref} className="ca-scrub-wrap" style={{ height: '320vh' }}>
+      <div className="ca-sticky">
         {ready ? <Suspense fallback={null}><TerrainScene grid={grid.data} rf={rf.data} t={t} /></Suspense> : <div className="status"><span className="spinner" /> Loading Slater Plain terrain…</div>}
-        <div className="hud">
-          <div className="eyebrow">Slater Plain · 31 Oct 2027 · real LOLA terrain, computed shadows</div>
-          <h2 className="big small">Same 4 km drive. One rover chases the Sun.</h2>
-          <div className="hud-row">
-            <div className={`hud-card ${shortFrozen ? 'dead' : ''}`}>
-              <span className="dot red" />Shortest path
-              <b>{shortFrozen ? 'FROZEN' : `${batt(short).toFixed(0)}%`}</b>
-              <small>{short ? `survives ${(100 * short.survival_probability).toFixed(0)}% of 500 simulated missions` : ''}</small>
-            </div>
-            <div className="hud-card">
-              <span className="dot amber" />Sunchaser
-              <b>{fastArrived ? 'ARRIVED' : `${batt(fast).toFixed(0)}%`}</b>
-              <small>{fast ? `survives ${(100 * fast.survival_probability).toFixed(0)}% of 500 simulated missions` : ''}</small>
-            </div>
+        <div className="ca-hud">
+          <p className="ca-eyebrow">Special feature · Slater Plain · real LOLA terrain, computed shadows</p>
+          <h2 className="ca-h2">Same 4 km drive.<br />One rover chases the Sun.</h2>
+          <div className="ca-specs hud">
+            <div className={shortFrozen ? 'dead' : ''}><span><i className="dot red" />Shortest path</span><b>{shortFrozen ? 'FROZEN' : `${batt(short).toFixed(0)}%`}</b>
+              <em>{short ? `survives ${(100 * short.survival_probability).toFixed(0)}% of 500 runs` : ''}</em></div>
+            <div><span><i className="dot amber" />Sunchaser</span><b>{fastArrived ? 'ARRIVED' : `${batt(fast).toFixed(0)}%`}</b>
+              <em>{fast ? `survives ${(100 * fast.survival_probability).toFixed(0)}% of 500 runs` : ''}</em></div>
           </div>
-          <div className="hud-time">T+{t.toFixed(1)} h · scroll to drive · drag to orbit</div>
+          <p className="ca-small mono">T+{t.toFixed(1)} h · battery · scroll to drive · drag to orbit</p>
         </div>
       </div>
     </section>
+  )
+}
+
+function Results() {
+  const ref = useReveal<HTMLElement>()
+  return (
+    <section ref={ref} className="ca-section reveal">
+      <p className="ca-eyebrow">What Sunchaser computed</p>
+      <h2 className="ca-h1">Where matters. When matters just as much.</h2>
+      <Specs cells={[['Candidate regions', '9 Artemis III'], ['Hours computed per site', '8,760 in 2027'], ['Survivable landing times', '14–54% by site'], ['Monte Carlo runs per route', '500']]} />
+    </section>
+  )
+}
+
+function Business() {
+  const ref = useReveal<HTMLElement>()
+  return (
+    <section ref={ref} className="ca-section ca-feature reveal">
+      <div className="ca-split">
+        <div>
+          <p className="ca-eyebrow">The business case</p>
+          <h2 className="ca-h1">A three-day slip can halve your mission.</h2>
+        </div>
+        <div>
+          <p className="ca-body">At Malapert, launching three days late cuts the usable days in half, so each one costs twice as much. Sunchaser
+            scores every landing time in 2027, so a mission team can see what a slip costs before it happens, in days and in dollars.</p>
+          <div className="ca-links"><Link to="/windows">See every landing window →</Link><Link to="/business">Cost per usable day →</Link></div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function Validation() {
+  const ref = useReveal<HTMLElement>()
+  return (
+    <section ref={ref} className="ca-section reveal">
+      <p className="ca-eyebrow">Checked against reality</p>
+      <h2 className="ca-h1">It agrees with NASA's maps, and with the landers that went there.</h2>
+      <Specs cells={[['Correlation with NASA, Sun', '0.98'], ['Correlation with NASA, Earth', '0.99'], ['IM-1 and IM-2 sites', 'Sun up, Earth in view'], ['Honest limits', 'On the Methods page']]} />
+      <div className="ca-links"><Link to="/methods">How every number is computed →</Link></div>
+    </section>
+  )
+}
+
+const TOOLS: [string, string, string][] = [
+  ['/map', 'Compare sites', 'Nine regions ranked by usable days, on the real LOLA map'],
+  ['/light', 'Sun and Earth', 'Hour by hour: sunlight, Earth contact, Deep Space Network'],
+  ['/windows', 'Landing windows', 'Every landing time in 2027, and what a slip costs'],
+  ['/rover', 'Rover operations', 'Shortest path versus Sunchaser, with survival odds'],
+  ['/business', 'Business case', 'Your budget, turned into cost per usable day'],
+  ['/copilot', 'Mission copilot', 'Ask in plain English; answers cite the computed numbers'],
+]
+
+function Tools() {
+  const ref = useReveal<HTMLElement>()
+  return (
+    <section ref={ref} className="ca-section reveal">
+      <p className="ca-eyebrow center">The planner</p>
+      <h2 className="ca-display">Plan your landing.</h2>
+      <div className="ca-tools">
+        {TOOLS.map(([to, name, what], i) => (
+          <Link key={to} to={to} className="ca-tool" style={{ transitionDelay: `${i * 60}ms` }}>
+            <b>{name}</b><span>{what}</span><i>Open →</i>
+          </Link>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function Footer() {
+  return (
+    <footer className="ca-footer">
+      <p className="ca-eyebrow center">Sunchaser · Team Zenon</p>
+      <p className="ca-small center">Data: JPL Horizons, LRO LOLA elevation, NASA Goddard PGDA illumination maps. Globe: LROC WAC global mosaic via NASA Moon Trek.
+        Photographs: NASA, NASA/GSFC/Arizona State University. Rover and shadow sequences are illustrative Higgsfield visualizations, not photographs.</p>
+    </footer>
   )
 }
