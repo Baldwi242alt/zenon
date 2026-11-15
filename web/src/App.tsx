@@ -1,4 +1,6 @@
-import { NavLink, Route, Routes } from 'react-router-dom'
+import { NavLink, Route, Routes, useLocation } from 'react-router-dom'
+import { lazy, Suspense } from 'react'
+const Story = lazy(() => import('./story/Story'))
 import Business from './screens/Business'
 import Copilot from './screens/Copilot'
 import LandingWindows from './screens/LandingWindows'
@@ -8,7 +10,8 @@ import MissionMap from './screens/MissionMap'
 import RoverOps from './screens/RoverOps'
 
 const NAV = [
-  { to: '/', label: 'Mission map' },
+  { to: '/', label: '← Story' },
+  { to: '/map', label: 'Mission map' },
   { to: '/light', label: 'Light & comms' },
   { to: '/windows', label: 'Landing windows' },
   { to: '/rover', label: 'Rover ops' },
@@ -18,6 +21,8 @@ const NAV = [
 ]
 
 export default function App() {
+  const loc = useLocation()
+  if (loc.pathname === '/') return <Suspense fallback={<div className="story" style={{ minHeight: '100vh' }} />}><Story /></Suspense>
   const links = NAV.map(n => <NavLink key={n.to} to={n.to} end={n.to === '/'}>{n.label}</NavLink>)
   return (
     <div className="app">
@@ -30,7 +35,7 @@ export default function App() {
         <nav className="mobile-nav">{links}</nav>
         <main className="main">
           <Routes>
-            <Route path="/" element={<MissionMap />} />
+            <Route path="/map" element={<MissionMap />} />
             <Route path="/light" element={<LightComms />} />
             <Route path="/windows" element={<LandingWindows />} />
             <Route path="/rover" element={<RoverOps />} />
