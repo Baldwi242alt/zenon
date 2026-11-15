@@ -12,19 +12,22 @@ full 150 km ray cast from each of 4,096 cells would be slow, so we split it
     LOLA 20 m DEM, because nearby hills look completely different from
     cells a few hundred metres apart.
   - FAR field (15 to 150 km): the terrain heights along each ray are read
-    once from the grid centre; each cell then works out its own angle to
-    that terrain from its own ground height. (A cell is at most 1.8 km from
-    the centre, small next to 15+ km, so the rays are effectively the same.)
+    once per block of 8 x 8 cells (from the block's middle cell); each cell
+    then works out its own angle to that terrain from its own ground height.
+    (A cell is at most a few hundred metres from its block's anchor, small
+    next to 15+ km, so the rays are effectively the same.)
   - The horizon is the higher of the two.
 
 The Sun's direction comes from the site's timeline (JPL Horizons at the
-centre). The Moon curves away under the grid, so a cell d metres closer to
-the Sun sees it higher by d / R radians (about 0.03 deg per km); we apply
-that correction per cell.
+centre), corrected per cell in two ways: the Moon curves away under the
+grid, so a cell d metres closer to the Sun sees it higher by d / R radians
+(about 0.03 deg per km); and local north turns with longitude near the pole,
+so the Sun's azimuth in a cell is shifted by the longitude difference from
+the centre (a few degrees across a 5 km grid).
 
 Honest limits: azimuths are sampled every 1 deg; far-field rays are cast
-from the centre, not from each cell; observer is a 2 m mast; cells are
-40 m, so features smaller than that are smoothed out.
+per block of cells, not from each cell; observer is a 2 m mast; features
+smaller than a cell are smoothed out.
 """
 
 import numpy as np
@@ -36,6 +39,7 @@ from .sunfrac import sun_visible_fraction
 GRID_AZ = np.arange(0.0, 360.0, 1.0)
 NEAR_M = 15_000.0
 FAR_M = 150_000.0
+FAR_BLOCK = 8          # far-field rays are cast once per block of 8 x 8 cells
 
 
 def near_distances(cell_m, fine_to_m=3_000.0, max_m=NEAR_M, growth=0.01):
@@ -90,26 +94,38 @@ class ShadowGrid:
                     north_rc=n_rc, east_rc=e_rc, distances_m=nd, mast_m=mast_m,
                     ground_h_m=self.elevation[i, j])
 
-        # --- far-field terrain along rays from the centre, then per-cell angles ---
-        fr, fc = far_dem.latlon_to_rc(lat, lon)
-        fn, fe = far_dem.local_north_east_rc(lat, lon)
+        # --- far-field terrain: rays cast from an anchor in each block of cells ---
+        # Distant terrain (15-150 km) looks almost the same from cells a few hundred
+        # metres apart, so rays are cast once per block of FAR_BLOCK x FAR_BLOCK cells
+        # (from the block's middle cell, with that cell's own north), and every cell in
+        # the block works out its own angle to that terrain from its own ground height.
         fd = far_field_distances(far_dem.cell_size_m, max_m=FAR_M)
         fd = fd[fd >= NEAR_M]
         az = np.radians(GRID_AZ)
-        dr = np.cos(az)[:, None] * fn[0] + np.sin(az)[:, None] * fe[0]
-        dc = np.cos(az)[:, None] * fn[1] + np.sin(az)[:, None] * fe[1]
         steps = fd[None, :] / far_dem.cell_size_m
-        ray_h = bilinear_sample(far_dem.heights, fr + dr * steps, fc + dc * steps)
-        ray_h = ray_h - curvature_drop_m(fd)[None, :]           # (az, dist)
-        eye = (self.elevation + mast_m).reshape(-1)               # (cells,)
-        far = np.empty((eye.size, GRID_AZ.size))
-        for s in range(0, eye.size, 256):                         # chunks keep memory small
-            e = eye[s:s + 256, None, None]
-            ang = np.degrees(np.arctan2(ray_h[None, :, :] - e, fd[None, None, :]))
-            far[s:s + 256] = np.nanmax(np.where(np.isnan(ang), -90.0, ang), axis=2)
-        self.far_h = far.reshape(rows, cols, GRID_AZ.size)
+        drop = curvature_drop_m(fd)[None, :]
+        self.far_h = np.empty((rows, cols, GRID_AZ.size))
+        for i0 in range(0, rows, FAR_BLOCK):
+            for j0 in range(0, cols, FAR_BLOCK):
+                i1, j1 = min(i0 + FAR_BLOCK, rows), min(j0 + FAR_BLOCK, cols)
+                a_lat = self.cell_lat[(i0 + i1 - 1) // 2, (j0 + j1 - 1) // 2]
+                a_lon = self.cell_lon[(i0 + i1 - 1) // 2, (j0 + j1 - 1) // 2]
+                fr, fc = far_dem.latlon_to_rc(a_lat, a_lon)
+                fn, fe = far_dem.local_north_east_rc(a_lat, a_lon)
+                dr = np.cos(az)[:, None] * fn[0] + np.sin(az)[:, None] * fe[0]
+                dc = np.cos(az)[:, None] * fn[1] + np.sin(az)[:, None] * fe[1]
+                ray_h = bilinear_sample(far_dem.heights, fr + dr * steps, fc + dc * steps) - drop
+                eye = (self.elevation[i0:i1, j0:j1] + mast_m).reshape(-1)
+                ang = np.degrees(np.arctan2(ray_h[None, :, :] - eye[:, None, None], fd[None, None, :]))
+                far = np.nanmax(np.where(np.isnan(ang), -90.0, ang), axis=2)
+                self.far_h[i0:i1, j0:j1] = far.reshape(i1 - i0, j1 - j0, GRID_AZ.size)
 
         self.horizon = np.maximum(self.near_h, self.far_h)        # (rows, cols, az)
+
+        # Local north turns with longitude near the pole, so the Sun's compass direction
+        # differs from cell to cell: azimuth in a cell = azimuth at the centre + (centre
+        # longitude - cell longitude). Up to a few degrees across a 5 km grid.
+        self.az_shift = ((lon - self.cell_lon + 180.0) % 360.0) - 180.0
 
         # Offsets of each cell from the centre, in metres north and east.
         off_r = (cell_r - rc_r) * near_dem.cell_size_m
@@ -131,11 +147,14 @@ class ShadowGrid:
             # Cells closer to the Sun see it slightly higher (lunar curvature).
             toward_sun_m = self.off_north * np.cos(a) + self.off_east * np.sin(a)
             el_cell = el[s] + np.degrees(toward_sun_m / MOON_RADIUS_M)
-            # Horizon at the Sun's azimuth: linear interpolation between 1 deg bins.
-            pos = (az[s] % 360.0)
-            k0 = int(np.floor(pos)) % 360
+            # Horizon at the Sun's azimuth as each cell sees it: linear interpolation
+            # between the 1 deg bins of that cell's own horizon profile.
+            pos = (az[s] + self.az_shift) % 360.0
+            k0 = np.floor(pos).astype(int) % 360
             k1 = (k0 + 1) % 360
             w = pos - np.floor(pos)
-            hz = self.horizon[:, :, k0] * (1 - w) + self.horizon[:, :, k1] * w
+            h0 = np.take_along_axis(self.horizon, k0[:, :, None], axis=2)[:, :, 0]
+            h1 = np.take_along_axis(self.horizon, k1[:, :, None], axis=2)[:, :, 0]
+            hz = h0 * (1 - w) + h1 * w
             out[s] = np.rint(100 * sun_visible_fraction(el_cell, hz))
         return out
