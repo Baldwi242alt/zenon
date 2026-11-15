@@ -1,0 +1,115 @@
+{
+  "generated": "2026-11-11T01:56Z",
+  "window_start": "2027-06-01",
+  "window_end": "2027-06-30",
+  "sites": [
+    {
+      "site": "cabeus_b_peak",
+      "rank": 1,
+      "usable_days": 10.0,
+      "sun_hours": 240.0,
+      "contact_hours": 240.0,
+      "both_hours": 240.0,
+      "longest_dark_h": 0.0,
+      "survives": true,
+      "best_landing": "2027-06-19T18:00Z",
+      "brief": "Peak near Cabeus B ranks 1 of 9 for June 2027, with the best landing at 19 Jun 2027, 18:00 UTC. That landing gives 10 usable days out of a 10-day mission, with 240 sunlit hours and 240 hours of Earth contact. No dark spell occurs in this window, and Earth is in view for 240 of 240 hours."
+    },
+    {
+      "site": "de_gerlache_rim_2",
+      "rank": 2,
+      "usable_days": 10.0,
+      "sun_hours": 240.0,
+      "contact_hours": 240.0,
+      "both_hours": 240.0,
+      "longest_dark_h": 0.0,
+      "survives": true,
+      "best_landing": "2027-06-22T06:00Z",
+      "brief": "de Gerlache Rim 2 ranks 2 of 9 for June 2027, with the best landing at 22 Jun 2027, 06:00 UTC. That landing gives 10 usable days out of a 10-day mission, with 240 sunlit hours and 240 hours of Earth contact. No dark spell occurs in this window, and Earth is in view for 240 of 240 hours."
+    },
+    {
+      "site": "haworth",
+      "rank": 3,
+      "usable_days": 10.0,
+      "sun_hours": 239.0,
+      "contact_hours": 222.0,
+      "both_hours": 222.0,
+      "longest_dark_h": 1.0,
+      "survives": true,
+      "best_landing": "2027-06-21T06:00Z",
+      "brief": "Haworth ranks 3 of 9 for June 2027, with the best landing at 21 Jun 2027, 06:00 UTC. That landing gives 10 usable days out of a 10-day mission, with 239 sunlit hours and 222 hours of Earth contact. The main risk is darkness: the longest dark spell is 1 hours, within the survivable limit of 18 hours."
+    },
+    {
+      "site": "mons_mouton",
+      "rank": 4,
+      "usable_days": 8.0,
+      "sun_hours": 231.0,
+      "contact_hours": 175.0,
+      "both_hours": 166.0,
+      "longest_dark_h": 9.0,
+      "survives": true,
+      "best_landing": "2027-06-16T12:00Z",
+      "brief": "Mons Mouton ranks 4 of 9 for June 2027, with the best landing at 16 Jun 2027, 12:00 UTC. That landing gives 8 usable days out of a 10-day mission, with 231 sunlit hours and 175 hours of Earth contact. The main risk is darkness: the longest dark spell is 9 hours, within the survivable limit of 18 hours."
+    },
+    {
+      "site": "slater_plain",
+      "rank": 5,
+      "usable_days": 6.0,
+      "sun_hours": 240.0,
+      "contact_hours": 142.0,
+      "both_hours": 142.0,
+      "longest_dark_h": 0.0,
+      "survives": true,
+      "best_landing": "2027-06-01T00:00Z",
+      "brief": "Slater Plain ranks 5 of 9 for June 2027, with the best landing at 1 Jun 2027, 00:00 UTC. That landing gives 6 usable days out of a 10-day mission, with 240 sunlit hours and 142 hours of Earth contact. No dark spell occurs in this window, and Earth is in view for 142 of 240 hours."
+    },
+    {
+      "site": "malapert_massif",
+      "rank": 6,
+      "usable_days": 5.0,
+      "sun_hours": 231.0,
+      "contact_hours": 101.0,
+      "both_hours": 92.0,
+      "longest_dark_h": 9.0,
+      "survives": true,
+      "best_landing": "2027-06-13T18:00Z",
+      "brief": "Malapert Massif ranks 6 of 9 for June 2027, with the best landing at 13 Jun 2027, 18:00 UTC. That landing gives 5 usable days out of a 10-day mission, with 231 sunlit hours and 101 hours of Earth contact. The main risk is Earth contact: only 101 of 240 hours have Earth in view for direct communication."
+    },
+    {
+      "site": "nobile_rim_2",
+      "rank": 7,
+      "usable_days": 3.0,
+      "sun_hours": 228.0,
+      "contact_hours": 56.0,
+      "both_hours": 44.0,
+      "longest_dark_h": 12.0,
+      "survives": true,
+      "best_landing": "2027-06-08T06:00Z",
+      "brief": "Nobile Rim 2 ranks 7 of 9 for June 2027, with the best landing at 8 Jun 2027, 06:00 UTC. That landing gives 3 usable days out of a 10-day mission, with 228 sunlit hours and 56 hours of Earth contact. The main risk is Earth contact: only 56 of 240 hours have Earth in view for direct communication."
+    },
+    {
+      "site": "mons_mouton_plateau",
+      "rank": 8,
+      "usable_days": 0.0,
+      "sun_hours": 228.0,
+      "contact_hours": 0.0,
+      "both_hours": 0.0,
+      "longest_dark_h": 6.0,
+      "survives": true,
+      "best_landing": "2027-06-10T12:00Z",
+      "brief": "Mons Mouton Plateau ranks 8 of 9 for June 2027, with the best landing at 10 Jun 2027, 12:00 UTC. That landing gives 0 usable days out of a 10-day mission, with 228 sunlit hours and 0 hours of Earth contact. The main risk is Earth contact: only 0 of 240 hours have Earth in view for direct communication."
+    },
+    {
+      "site": "nobile_rim_1",
+      "rank": 9,
+      "usable_days": 7.0,
+      "sun_hours": 139.0,
+      "contact_hours": 240.0,
+      "both_hours": 139.0,
+      "longest_dark_h": 84.0,
+      "survives": false,
+      "best_landing": "2027-06-27T12:00Z",
+      "brief": "Nobile Rim 1 ranks 9 of 9 for June 2027, with the best landing at 27 Jun 2027, 12:00 UTC. That landing gives 7 usable days out of a 10-day mission, with 139 sunlit hours and 240 hours of Earth contact. The main risk is darkness: the longest dark spell is 84 hours, beyond the survivable limit of 18 hours."
+    }
+  ]
+}
