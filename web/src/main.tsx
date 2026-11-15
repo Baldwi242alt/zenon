@@ -5,6 +5,7 @@ import App from './App'
 import { StoreProvider } from './store'
 import './theme.css'
 import './archive.css'
+import './leads.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

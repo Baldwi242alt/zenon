@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { LineChart, Panel, Placeholder, SitePicker, Status, Tile } from '../components/ui'
 import { fmtTime, useJson, useRover } from '../data'
 import { useStore } from '../store'
 import type { Grid, Route, RouteFile, Site } from '../types'
+
+const TerrainScene = lazy(() => import('../story/TerrainScene').then(m => ({ default: m.TerrainScene })))
 
 const COLORS: Record<string, string> = { shortest: '#f0605d', sunchaser_fast: '#f2a541', sunchaser_safe: '#4cc38a' }
 
@@ -87,45 +89,73 @@ function Ops({ grid, rf, site }: { grid: Grid; rf: RouteFile; site: Site }) {
   }, [playing, speed, end])
 
   const step = Math.min(grid.n_steps - 1, Math.floor(rf.depart_step + t))
+  const [view, setView] = useState<'3d' | 'map'>('3d')
+  const [hover, setHover] = useState<{ r: number; c: number } | null>(null)
+
+  // 2D map: the sunlight field is painted at cell resolution, then scaled up with smoothing so
+  // shadows have soft, interpolated edges instead of 80 m blocks. Routes glow; the part already
+  // driven is bright and the rest is faint.
   useEffect(() => {
-    const cv = canvas.current!
-    cv.width = N * PX; cv.height = N * PX
+    if (view !== 'map') return
+    const cv = canvas.current
+    if (!cv) return
+    const S = 1024, k = S / N
+    cv.width = S; cv.height = S
     const g = cv.getContext('2d')!
+    const field = document.createElement('canvas'); field.width = N; field.height = N
+    const fg = field.getContext('2d')!, img = fg.createImageData(N, N)
     const sun = grid.sun_pct[step]
     for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
-      const lit = sun[r][c] / 100, sh = relief[r][c]
-      const base = 18 + lit * 150 + sh * 60
-      g.fillStyle = lit > 0 ? `rgb(${base + 22 * lit},${base + 12 * lit},${base - 6 * lit})` : `rgb(${10 + sh * 20},${14 + sh * 22},${24 + sh * 26})`
-      g.fillRect(c * PX, r * PX, PX, PX)
-      if (steep[r][c]) {
-        g.strokeStyle = 'rgba(240,96,93,0.35)'; g.lineWidth = 1
-        g.beginPath(); g.moveTo(c * PX, r * PX + PX); g.lineTo(c * PX + PX, r * PX); g.stroke()
-      }
+      const lit = sun[r][c] / 100, sh = relief[r][c], o = (r * N + c) * 4
+      img.data[o] = lit * (205 + sh * 90) + (1 - lit) * (12 + sh * 30)
+      img.data[o + 1] = lit * (192 + sh * 85) + (1 - lit) * (18 + sh * 34)
+      img.data[o + 2] = lit * (165 + sh * 70) + (1 - lit) * (32 + sh * 40)
+      img.data[o + 3] = 255
     }
-    const cx = (c: number) => c * PX + PX / 2
+    fg.putImageData(img, 0, 0)
+    g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'
+    g.drawImage(field, 0, 0, S, S)
+    // steep ground: fine red hatching
+    g.strokeStyle = 'rgba(240,96,93,0.28)'; g.lineWidth = 1
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (steep[r][c]) {
+      g.beginPath(); g.moveTo(c * k, r * k + k); g.lineTo(c * k + k, r * k); g.moveTo(c * k + k / 2, r * k + k); g.lineTo(c * k + k, r * k + k / 2); g.stroke()
+    }
+    // faint 1 km grid
+    g.strokeStyle = 'rgba(255,255,255,0.06)'
+    const km = 1000 / grid.cell_size_m
+    for (let x = km; x < N; x += km) { g.beginPath(); g.moveTo(x * k, 0); g.lineTo(x * k, S); g.moveTo(0, x * k); g.lineTo(S, x * k); g.stroke() }
+    const cx = (v: number) => v * k + k / 2
     for (const route of rf.routes) {
-      g.strokeStyle = COLORS[route.name]; g.lineWidth = route.name === 'shortest' ? 2 : 3
-      g.setLineDash(route.name === 'sunchaser_safe' ? [5, 4] : []); g.globalAlpha = 0.9
-      g.beginPath()
-      route.steps.forEach((s, i) => (i ? g.lineTo(cx(s.col), cx(s.row)) : g.moveTo(cx(s.col), cx(s.row))))
-      g.stroke(); g.setLineDash([]); g.globalAlpha = 1
-    }
-    // start and target
-    for (const [p, label] of [[rf.start, 'START'], [rf.target, 'TARGET']] as const) {
-      g.fillStyle = '#fff'; g.beginPath(); g.arc(cx(p.col), cx(p.row), 5, 0, 7); g.fill()
-      g.font = '600 12px "IBM Plex Mono"'; g.fillStyle = '#fff'; g.fillText(label, cx(p.col) + 8, cx(p.row) - 8)
-    }
-    for (const route of rf.routes) {
+      const col = COLORS[route.name]
+      g.setLineDash(route.name === 'sunchaser_safe' ? [10, 8] : [])
+      g.lineCap = 'round'; g.lineJoin = 'round'
+      g.globalAlpha = 0.3; g.strokeStyle = col; g.lineWidth = 3
+      g.beginPath(); route.steps.forEach((st, i) => (i ? g.lineTo(cx(st.col), cx(st.row)) : g.moveTo(cx(st.col), cx(st.row)))); g.stroke()
       const p = posAt(route, t)
-      g.fillStyle = COLORS[route.name]; g.strokeStyle = '#000'; g.lineWidth = 2
-      g.beginPath(); g.arc(cx(p.c), cx(p.r), 7, 0, 7); g.fill(); g.stroke()
-      if (p.frozen) {
-        g.font = '700 14px "IBM Plex Sans Condensed"'; g.fillStyle = '#f0605d'
-        g.fillText('FROZEN', cx(p.c) + 10, cx(p.r) + 5)
-      }
+      g.globalAlpha = 1; g.lineWidth = 5; g.shadowColor = col; g.shadowBlur = 14
+      g.beginPath()
+      route.steps.slice(0, p.i + 1).forEach((st, i) => (i ? g.lineTo(cx(st.col), cx(st.row)) : g.moveTo(cx(st.col), cx(st.row))))
+      g.lineTo(cx(p.c), cx(p.r)); g.stroke()
+      g.shadowBlur = 0; g.setLineDash([])
     }
-  }, [grid, rf, step, t, steep, relief, N])
+    for (const [pt, label] of [[rf.start, 'START'], [rf.target, 'TARGET']] as const) {
+      g.strokeStyle = '#fff'; g.lineWidth = 2; g.beginPath(); g.arc(cx(pt.col), cx(pt.row), 11, 0, 7); g.stroke()
+      g.fillStyle = '#fff'; g.beginPath(); g.arc(cx(pt.col), cx(pt.row), 3.5, 0, 7); g.fill()
+      g.font = '13px "Traveling Typewriter", monospace'; g.fillText(label, cx(pt.col) + 16, cx(pt.row) - 12)
+    }
+    for (const route of rf.routes) {
+      const p = posAt(route, t), col = p.frozen ? '#8fd0ff' : COLORS[route.name]
+      const x = cx(p.c), y = cx(p.r)
+      const halo = g.createRadialGradient(x, y, 0, x, y, 34); halo.addColorStop(0, col + 'aa'); halo.addColorStop(1, col + '00')
+      g.fillStyle = halo; g.beginPath(); g.arc(x, y, 34, 0, 7); g.fill()
+      g.fillStyle = col; g.strokeStyle = '#000'; g.lineWidth = 2.5; g.beginPath(); g.arc(x, y, 9, 0, 7); g.fill(); g.stroke()
+      if (p.frozen) { g.font = '600 22px "STIX Two Text", serif'; g.fillStyle = '#8fd0ff'; g.fillText('FROZEN', x + 18, y + 7) }
+    }
+  }, [view, grid, rf, step, t, steep, relief, N])
 
+  const hoverCell = hover && {
+    elev: grid.elevation_m[hover.r][hover.c], slope: grid.slope_deg[hover.r][hover.c], sun: grid.sun_pct[step][hover.r][hover.c],
+  }
   const now = new Date(Date.parse(grid.window_start.replace('Z', ':00Z')) + (rf.depart_step + t) * 3600e3)
   const shortest = rf.routes.find(r => r.name === 'shortest')!
   const fast = rf.routes.find(r => r.name === 'sunchaser_fast')
@@ -143,7 +173,21 @@ function Ops({ grid, rf, site }: { grid: Grid; rf: RouteFile; site: Site }) {
       </div>
       <div className="ops">
         <div>
-          <canvas ref={canvas} aria-label={`Shadow map of a 5 km area at ${site.name} with the planned routes`} />
+          <div className="view-toggle seg" role="group" aria-label="View">
+            <button className={view === '3d' ? 'on' : ''} onClick={() => setView('3d')}>3D terrain</button>
+            <button className={view === 'map' ? 'on' : ''} onClick={() => setView('map')}>Shadow map</button>
+          </div>
+          <div className="ops-stage">
+            {view === '3d'
+              ? <Suspense fallback={<div className="status"><span className="spinner" /> Building 3D terrain…</div>}><TerrainScene grid={grid} rf={rf} t={t} /></Suspense>
+              : <canvas ref={canvas} aria-label={`Shadow map of a 5 km area at ${site.name} with the planned routes`}
+                  onMouseMove={e => { const b = e.currentTarget.getBoundingClientRect(); setHover({ r: Math.min(N - 1, Math.floor(((e.clientY - b.top) / b.height) * N)), c: Math.min(N - 1, Math.floor(((e.clientX - b.left) / b.width) * N)) }) }}
+                  onMouseLeave={() => setHover(null)} />}
+            {view === 'map' && hoverCell && (
+              <div className="ops-probe"><span>Cell {hover!.r}, {hover!.c}</span><b>{hoverCell.sun}% sun</b><em>{hoverCell.elev.toFixed(0)} m · slope {hoverCell.slope.toFixed(1)}°{hoverCell.slope > rover.drive.max_slope_deg ? ' · too steep' : ''}</em></div>
+            )}
+            <div className="ops-clock"><span>Mission time</span><b>T+{t.toFixed(1)} h</b></div>
+          </div>
           <div className="player">
             <button className="btn primary" onClick={() => { if (t >= end) setT(0); setPlaying(p => !p) }}>{playing ? 'Pause' : t >= end ? 'Replay' : 'Play'}</button>
             <div className="seg" role="group" aria-label="Playback speed">
@@ -152,7 +196,7 @@ function Ops({ grid, rf, site }: { grid: Grid; rf: RouteFile; site: Site }) {
             <input type="range" min={0} max={end} step={0.05} value={t} onChange={e => { setPlaying(false); setT(+e.target.value) }} aria-label="Mission time" />
             <span className="mono">T+{t.toFixed(1)} h</span>
           </div>
-          <p className="note mono">{fmtTime(now.toISOString().slice(0, 16) + 'Z')} · {grid.rows * grid.cell_size_m / 1000} km × {grid.cols * grid.cell_size_m / 1000} km, {grid.cell_size_m} m cells · bright = sunlit, dark = shadow, red hatching = too steep to drive</p>
+          <p className="note mono">{fmtTime(now.toISOString().slice(0, 16) + 'Z')} · {grid.rows * grid.cell_size_m / 1000} km × {grid.cols * grid.cell_size_m / 1000} km, {grid.cell_size_m} m cells · {view === '3d' ? 'real LOLA terrain, heights ×3, drag to orbit' : 'bright = sunlit, dark = shadow, red hatching = too steep to drive, hover for details'}</p>
         </div>
         <div>
           {rf.routes.map(r => {

@@ -13,3 +13,4 @@ site come from NASA (LRO LOLA, LROC, JPL Horizons, NASA Image Library).
 The frames are scrubbed by scroll position (`web/src/story/Scrub.tsx`).
 | `regolith.jpg` | GPT Image 2.6 | Seamless top-down lunar regolith grain, used only as surface detail on the 3D terrain (heights and shadows there are real data) |
 | `polar_dawn.webp` | Frame 36 of `shadow/` | Header image for the Landing windows page |
+| `rover_loop.mp4`, `shadow_loop.mp4` | Re-encodes of the two Kling videos above | Muted looping headers for the Rover and Landing windows pages |

@@ -27,6 +27,7 @@ export default function Story() {
     <div className="ca">
       <SiteNav />
       <Hero />
+      <Mission />
       <Survey />
       <ShadowFeature />
       <HorizonFeature />
@@ -38,6 +39,29 @@ export default function Story() {
       <Tools />
       <Footer />
     </div>
+  )
+}
+
+// What the site is for, in one screen: the three decisions a mission team makes, in order.
+function Mission() {
+  const ref = useReveal<HTMLElement>()
+  const steps: [string, string, string, string][] = [
+    ['/map', 'Where to land', 'Compare nine NASA Artemis III candidate regions by usable days: hours of sunlight for power and hours with Earth in view for radio.', 'Compare sites'],
+    ['/windows', 'When to land', 'Score every possible landing time in 2027, every six hours, and see what a launch slip would cost.', 'Find a window'],
+    ['/rover', 'How to drive', 'Plan a route that follows the light, and check across 500 simulated missions that the rover survives.', 'Plan a route'],
+  ]
+  return (
+    <section ref={ref} className="ca-section ca-mission reveal">
+      <p className="ca-eyebrow">What Sunchaser does</p>
+      <h2 className="ca-h1">A solar robot at the south pole lives or dies by the light. Sunchaser answers three questions before you launch.</h2>
+      <p className="ca-body">Built for NASA Space Apps 2026, Lunar Landing Site Navigator: compare south-pole landing sites and dates by when the Sun and Earth are
+        above the horizon, so planners can judge solar power and direct-to-Earth radio. Then plan the drive and price the mission.</p>
+      <ol className="ca-steps">
+        {steps.map(([to, k, v, cta], i) => (
+          <li key={to}><span className="ca-step-n">{String(i + 1).padStart(2, '0')}</span><h3 className="ca-h3">{k}</h3><p>{v}</p><Link to={to}>{cta} →</Link></li>
+        ))}
+      </ol>
+    </section>
   )
 }
 

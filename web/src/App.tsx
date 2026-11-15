@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { Route, Routes, useLocation } from 'react-router-dom'
 import { PageHero } from './components/PageHero'
+import { PageLead } from './components/PageLead'
 import { SiteNav } from './components/SiteNav'
 import Business from './screens/Business'
 import Copilot from './screens/Copilot'
@@ -20,6 +21,7 @@ export default function App() {
     <div className="arch">
       <SiteNav />
       <PageHero />
+      <PageLead />
       <main className="main">
         <Routes>
           <Route path="/map" element={<MissionMap />} />
