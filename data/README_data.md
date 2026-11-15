@@ -6,7 +6,7 @@ Produces the shared files in `shared/`: `sites.json`, `timeline_SITE.json`,
 ## Setup
 
 ```bash
-pip install -r data/requirements.txt
+pip install -r data/requirements-pipeline.txt
 python -m pytest data/tests
 ```
 

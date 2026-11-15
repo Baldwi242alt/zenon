@@ -122,7 +122,7 @@ docs/        each member's handbook
 ## Run it
 
 ```bash
-pip install -r data/requirements.txt
+pip install -r data/requirements-pipeline.txt
 python -m pytest data/tests planner/tests hardware/tests      # everything, about 15 seconds
 
 # Rebuild the data (needs about 4 GB of LOLA elevation files; download commands in data/README_data.md)
