@@ -2,7 +2,8 @@
 
 Real hardware never matches its spec sheet exactly. So instead of saying a
 route "survives", we replay it many times (500 by default) with a rover that is
-slightly different each time, and report the share of runs that never freeze.
+slightly different each time, and report the share of runs that never freeze,
+either on the way or in the 24 hours parked at the destination afterwards.
 
 Each run multiplies:
   - battery capacity by a random factor  ~ normal(1, uncertainty_pct.battery_capacity / 100)
@@ -20,8 +21,12 @@ import numpy as np
 from .sim import simulate
 
 
-def survival_probability(world, plan, depart_step, n=500, seed=42, max_delay_h=2.0):
+def survival_probability(world, plan, depart_step, n=500, seed=42, max_delay_h=2.0, settle_h=24.0):
     """Returns {"survival_probability": 0-1, "p5_min_battery_pct": float, "runs": n}.
+
+    A run survives if the rover never freezes during the route or during the
+    settle_h hours it then spends parked at the route's last cell: arriving and
+    dying an hour later is not survival.
 
     p5_min_battery_pct is the 5th percentile of the lowest battery level reached:
     in 95% of runs the battery stayed above this.
@@ -32,6 +37,8 @@ def survival_probability(world, plan, depart_step, n=500, seed=42, max_delay_h=2
     panel = np.clip(rng.normal(1.0, unc.get("panel_output", 0) / 100.0, n), 0.5, 1.5)
     draw = np.clip(rng.normal(1.0, unc.get("power_draw", 0) / 100.0, n), 0.5, 1.5)
     delay = rng.uniform(0.0, max_delay_h, n)
+    if settle_h > 0:
+        plan = list(plan) + [("wait", plan[-1][1], plan[-1][2], settle_h)]
     survived = 0
     lows = []
     for i in range(n):

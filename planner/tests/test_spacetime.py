@@ -77,7 +77,8 @@ def test_routes_never_enter_steep_cells_or_drop_below_the_reserve():
     grid = make_grid(12, 12, 80, slope=lambda r, c: 30.0 if (r, c) in steep else 2.0,
                      sun=lambda s, r, c: 100 if (s // 6 + c // 4) % 2 == 0 else 0)
     w = World(grid, rover(capacity_wh=150))
-    plan, _ = plan_route(w, (0, 0), (11, 11), 0)
+    # settle_h=0: this test is about the drive itself (a 150 Wh battery can't park through 6 h of dark).
+    plan, _ = plan_route(w, (0, 0), (11, 11), 0, settle_h=0.0)
     assert plan is not None
     result = simulate(w, plan, 0)
     assert result["survived"] and not result["reserve_breached"]
@@ -92,8 +93,8 @@ def test_dominance_pruning_does_not_change_the_answer(seed):
     phase = [[rng.randrange(6) for _ in range(6)] for _ in range(4)]
     grid = make_grid(4, 6, 16, sun=lambda s, r, c: 100 if (s + phase[r][c]) % 6 < 3 else 0)
     w = World(grid, rover(capacity_wh=60))
-    fast, a = plan_route(w, (0, 0), (3, 5), 0, wait_steps=(1.0,))
-    brute, b = plan_route(w, (0, 0), (3, 5), 0, wait_steps=(1.0,), dominance=False)
+    fast, a = plan_route(w, (0, 0), (3, 5), 0, wait_steps=(1.0,), settle_h=0.0)
+    brute, b = plan_route(w, (0, 0), (3, 5), 0, wait_steps=(1.0,), dominance=False, settle_h=0.0)
     assert (fast is None) == (brute is None)
     if fast is not None:
         t_fast = sum(step[3] for step in fast)
@@ -144,3 +145,20 @@ def test_route_file_passes_its_own_checks():
     # A tampered route is caught.
     data["routes"][1]["steps"][3]["battery_wh"] = 1.0
     assert any("below the reserve" in e for e in check_route_file(data, w))
+
+
+def test_arrival_only_counts_if_the_rover_can_stay_alive_at_the_target():
+    # The last five columns (the target's neighbourhood) are in shadow until hour 30.
+    # With a 200 Wh battery the rover lasts under 2 h parked in the dark, so it must not
+    # arrive much before the Sun does, even though it could drive there in 6 hours.
+    grid = make_grid(3, 30, 80, sun=lambda s, r, c: 0 if (c >= 25 and s < 30) else 100)
+    w = World(grid, rover(**SMALL))
+    plan, _ = plan_route(w, (1, 0), (1, 29), 0)
+    arrive = sum(step[3] for step in plan)
+    assert arrive >= 28.0
+    # Replay the route plus 24 h parked at the target: the reserve is never breached.
+    parked = simulate(w, plan + [("wait", 1, 29, 24.0)], 0)
+    assert parked["survived"] and not parked["reserve_breached"]
+    # Without the rule the planner would arrive early, into the dark.
+    early, _ = plan_route(w, (1, 0), (1, 29), 0, settle_h=0.0)
+    assert sum(step[3] for step in early) < 10.0

@@ -12,8 +12,9 @@ passes, or to go around it.
 Goal: reach the target as early as possible. A* orders states by
     f = time so far + (straight-line "octile" distance left) / speed
 The second term is the fastest the rover could possibly still arrive, so it
-never overestimates: the first time the target is popped, that route is the
-fastest one found.
+never overestimates: the first time the target is popped, that arrival time is
+the fastest found. Among routes that arrive at that same time, the one with the
+most battery left is returned (same speed, more margin).
 
 Keeping the search small: dominance pruning
 -------------------------------------------
@@ -32,7 +33,11 @@ never compared against their own wait-chain.
 
 Waiting is only tried where it can matter: when the rover can charge (sunlit
 and battery not full), or when sunlight in or next to the cell changes within
-the next day (a shadow edge is arriving or leaving).
+the next two days (a shadow edge is arriving or leaving).
+
+Arriving safely: reaching the target only counts if the rover could then stay
+parked there for 24 hours without breaching its reserve. Otherwise the planner
+would happily "arrive" in the dark with an almost empty battery.
 
 Honest limits: time is continuous but waits come in fixed steps, so the
 "fastest" route is the fastest among routes built from those steps; the grid
@@ -45,7 +50,7 @@ EPS_T = 1e-9
 EPS_E = 1e-6
 
 
-def change_soon_table(world, horizon_h=24, min_change_pct=10):
+def change_soon_table(world, horizon_h=48, min_change_pct=10):
     """For every hour and cell: does sunlight in the cell or a neighbour change within horizon_h?
 
     Returned as a list (per hour) of bytearrays (per cell). Built with numpy
@@ -76,7 +81,7 @@ def change_soon_table(world, horizon_h=24, min_change_pct=10):
 
 def plan_route(world, start, target, depart_step, reserve_frac=None, start_energy=None,
                start_t=0.0, wait_steps=(1.0, 0.5), panel_scale=1.0, max_labels=1_500_000,
-               change_soon=None, dominance=True):
+               change_soon=None, dominance=True, settle_h=24.0):
     """Fastest route that never takes the battery below the reserve.
 
     world        World (grid + rover)
@@ -86,6 +91,9 @@ def plan_route(world, start, target, depart_step, reserve_frac=None, start_energ
     start_energy battery at the start in Wh (default: full); start_t hours already
                  elapsed since depart_step; panel_scale: all three are used when
                  replanning mid-route (for example after dust reduces panel output)
+    settle_h     arriving only counts if the rover could then stay parked at the
+                 target for this many hours without breaching the reserve (so it
+                 never "arrives" into a long shadow with an almost empty battery)
     dominance    False switches dominance pruning off (only exact duplicates are
                  dropped, and waiting is always allowed). Far slower; exists so the
                  tests can prove that pruning does not change the answer.
@@ -184,22 +192,37 @@ def plan_route(world, start, target, depart_step, reserve_frac=None, start_energ
         return nid
 
     n_origin[0] = 0
+    goal, goal_t = -1, 0.0
+
+    def finish(nid):
+        plan = []
+        while nid >= 0:
+            r, c = world.rc(n_cell[nid])
+            plan.append((n_act[nid], r, c, n_dur[nid]))
+            nid = n_parent[nid]
+        plan.reverse()
+        stats["reason"] = "ok"
+        return plan, stats
+
     while heap:
         f, neg_t, nid = heapq.heappop(heap)
+        if goal >= 0 and f > goal_t + 1e-6:
+            break                                        # nothing left can arrive as early
         if not alive[nid]:
             continue
         cell, t, e = n_cell[nid], n_t[nid], n_e[nid]
-        if cell == g_idx:
-            plan = []
-            while nid >= 0:
-                r, c = world.rc(n_cell[nid])
-                plan.append((n_act[nid], r, c, n_dur[nid]))
-                nid = n_parent[nid]
-            plan.reverse()
-            stats["reason"] = "ok"
-            return plan, stats
+        if cell == g_idx and waited(cell, t, e, min(t + settle_h, t_end)) is not None:
+            # A real arrival: the rover can also sit here safely for settle_h hours.
+            # First arrival fixes the fastest time. Keep looking only among routes that
+            # arrive at that same time, and keep the one with the most battery left:
+            # equal speed, more margin.
+            if goal < 0 or e > n_e[goal] + EPS_E:
+                goal, goal_t = nid, t
+            continue
         stats["expanded"] += 1
         if stats["labels"] > max_labels:
+            if goal >= 0:
+                return finish(goal)
             stats["reason"] = "search limit reached"
             return None, stats
         t_abs = depart_step + t
@@ -234,6 +257,8 @@ def plan_route(world, start, target, depart_step, reserve_frac=None, start_energ
                 if new is not None:
                     heapq.heappush(heap, (t2 + octile(cell, g_idx) / speed, -t2, new))
 
+    if goal >= 0:
+        return finish(goal)
     stats["reason"] = "no safe route inside the time window"
     return None, stats
 

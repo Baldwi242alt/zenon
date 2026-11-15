@@ -51,7 +51,8 @@ LEAD_H = 24                 # the window starts this long before departure
 LATTICE = [5, 18, 32, 45, 58]
 MIN_SEPARATION_M = 3800.0
 DEPART_EVERY_H = 12
-SHORTLIST = 36
+SHORTLIST = 24
+SEARCH_LABELS = 80_000    # give up on a candidate after this many labels (hopeless cases are slow)
 MC_RUNS = 200
 
 
@@ -141,20 +142,23 @@ def search_site(site_id, rover, log=print):
             s0 = dep - LEAD_H
             w = World(as_grid(year, s0, WINDOW_H), rover)
             cs = change_soon_table(w)
-            plan, stats = plan_route(w, a, b, LEAD_H, change_soon=cs, max_labels=400_000)
+            plan, stats = plan_route(w, a, b, LEAD_H, change_soon=cs, max_labels=SEARCH_LABELS)
             if plan is None:
                 continue
             naive = path_to_plan(w, shortest_path(w, a, b))
             smart = simulate(w, plan, LEAD_H, log=False)
             p_smart = survival_probability(w, plan, LEAD_H, n=MC_RUNS)["survival_probability"]
             p_naive = survival_probability(w, naive, LEAD_H, n=MC_RUNS)["survival_probability"]
-            score = (p_smart - p_naive) - 0.003 * smart["duration_h"]
+            waits = sum(1 for s in plan if s[0] == "wait")
+            # Biggest survival gap first; shorter trips preferred; a small bonus when the
+            # rover really does park in sunlight to let a shadow pass (the story we tell).
+            score = (p_smart - p_naive) - 0.003 * smart["duration_h"] + (0.05 if waits else 0.0)
             cand = {"window_start": iso(year["start"], s0), "depart_step": LEAD_H,
                     "start": {"row": a[0], "col": a[1]}, "target": {"row": b[0], "col": b[1]},
                     "shortest_freezes": froze, "search": {
                         "sunchaser_duration_h": smart["duration_h"], "sunchaser_min_battery_pct": smart["min_battery_pct"],
                         "sunchaser_survival_probability": p_smart, "shortest_survival_probability": p_naive,
-                        "waits": sum(1 for s in plan if s[0] == "wait"), "score": round(score, 3)}}
+                        "waits": waits, "score": round(score, 3)}}
             if best is None or score > best["search"]["score"]:
                 best = cand
         return best
@@ -178,22 +182,27 @@ def search_site(site_id, rover, log=print):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--site")
+    ap.add_argument("--site", help="one site id, or several separated by commas (default: all)")
+    ap.add_argument("--merge-only", action="store_true", help="just rebuild scenarios.json from finished searches")
     args = ap.parse_args()
     rover, source = load_rover()
-    print(f"Rover: {source}")
+    print(f"Rover: {source}", flush=True)
     sites = [s["id"] for s in json.loads((SHARED / "sites.json").read_text())]
-    out = json.loads(OUT.read_text()) if OUT.exists() else {}
+    wanted = args.site.split(",") if args.site else sites
     for sid in sites:
-        if args.site and sid != args.site:
+        if args.merge_only or sid not in wanted:
             continue
         if not (CACHE / f"year_{sid}.npz").exists():
             print(f"{sid}: no year cache (run data/build_grid.py --year)")
             continue
-        found = search_site(sid, rover)
+        found = search_site(sid, rover, log=lambda m: print(m, flush=True))
         if found:
-            out[sid] = found
-            OUT.write_text(json.dumps({k: out[k] for k in sites if k in out}, indent=1) + "\n")
+            # One file per site, so several searches can run side by side.
+            (CACHE / f"scenario_{sid}.json").write_text(json.dumps(found))
+    done = {sid: json.loads((CACHE / f"scenario_{sid}.json").read_text())
+            for sid in sites if (CACHE / f"scenario_{sid}.json").exists()}
+    OUT.write_text(json.dumps(done, indent=1) + "\n")
+    print(f"planner/scenarios.json now has {len(done)} of {len(sites)} sites")
 
 
 if __name__ == "__main__":

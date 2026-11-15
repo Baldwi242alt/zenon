@@ -27,6 +27,8 @@ and fills in sentences with their numbers. It understands questions like:
 - "When should we land at Malapert in March?"
 - "How dark does Haworth get in August?"
 - "What does a 2-day slip cost at Mons Mouton with a $50 million budget?"
+- "Does the rover survive at Slater Plain?"
+- "Best landing for a 5-day mission at Mons Mouton in June?" (a new analysis, computed on the spot)
 Anything else gets a polite answer with these suggestions. So the copilot never breaks during a demo.
 
 **Free-tier reality (tested Nov 11, 2026):** `gemini-3.5-flash` (served as 3.6-flash) allows only
@@ -43,7 +45,7 @@ briefs are kept: Flash-Lite's briefs passed the numbers guard yet misread the 18
 
 ## How it stays grounded
 
-1. **Tools, not memory.** The AI (Gemini, or Claude if configured) gets six tools, each plain Python reading the computed files in `shared/`:
+1. **Tools, not memory.** The AI (Gemini, or Claude if configured) gets eight tools, each plain Python reading the computed files in `shared/`:
 
    | Tool | Answers |
    | --- | --- |
@@ -53,6 +55,8 @@ briefs are kept: Flash-Lite's briefs passed the numbers guard yet misread the 18
    | `compare_sites(month, site_list)` | Best landing per site in a month, ranked |
    | `timeline_stats(site, start_date, end_date)` | Sunlit %, Earth %, longest dark spell and contact gap, DSN share |
    | `slip_cost(site, landing, budget)` | Usable days and cost per usable day for 0/1/2/3/7-day slips |
+   | `analyze_custom_mission(site, month, mission_days, min_sun_hours, min_contact_hours, max_dark_hours)` | **Runs a new analysis live**: scans every landing time in a month for a mission with the caller's own length and rules (not precomputed) |
+   | `get_rover_routes(site)` | The planner's routes at a site: shortest versus Sunchaser, with survival probabilities |
 
    Tool schemas use `strict: true`, so arguments always match.
 2. **Facts.** Every tool returns labelled facts alongside its data.
@@ -69,7 +73,7 @@ briefs are kept: Flash-Lite's briefs passed the numbers guard yet misread the 18
 - `requirements.txt` at the repo root lists only `google-genai` and `anthropic`. Keep web frameworks out of
   it, or Vercel will treat the whole project as a Python app and stop serving the website.
 - `vercel.json` sets a 60 s limit and leaves the web app, the data pipeline and the 41 MB of grids out of the
-  function bundle; the copilot only reads `sites`, `scores`, `timeline_*` and `windows_*`.
+  function bundle; the copilot only reads `sites`, `scores`, `timeline_*`, `windows_*` and `route_*`.
 - Free-tier note: Google may use what is sent on the free tier to improve its products. Everything the
   copilot sends is public NASA-derived data and the user's question; don't type private information into it.
 

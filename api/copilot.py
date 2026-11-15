@@ -5,7 +5,8 @@ Request:  {"question": "Which site gives the most usable days in March?", "site"
 Response: {"answer": "...", "facts_used": [{"label": "...", "value": "..."}]}
 
 How it stays grounded
-  1. Claude gets six TOOLS. Each one is plain Python that reads the computed
+  1. The AI gets eight TOOLS (one of them, analyze_custom_mission, runs a new
+     analysis on request; get_rover_routes reads the planner's routes). Each one is plain Python that reads the computed
      files in shared/ (sites, scores, timelines, windows). Claude can't see the
      files directly; it has to ask the tools.
   2. Every tool returns its data plus a list of labelled FACTS.
@@ -228,6 +229,84 @@ def tool_slip_cost(site, landing, budget):
             "note": "Cost per usable day = budget / usable days; currency is whatever the budget is in."}, facts
 
 
+def _longest(flags):
+    best = cur = 0
+    for f in flags:
+        cur = cur + 1 if f else 0
+        best = max(best, cur)
+    return best
+
+
+def _score_mission(rows, mission_days, min_sun_hours, min_contact_hours, max_dark_hours):
+    """Score one mission from hourly timeline rows (same rules as the data pipeline's metrics.py)."""
+    lit = [r["sun_frac"] >= 0.5 for r in rows]
+    earth = [r["earth_visible"] for r in rows]
+    usable = 0
+    for d in range(int(mission_days)):
+        day = slice(d * 24, (d + 1) * 24)
+        if sum(lit[day]) >= min_sun_hours and sum(earth[day]) >= min_contact_hours:
+            usable += 1
+    dark = _longest([not x for x in lit])
+    return {"usable_days": usable, "sun_hours": sum(lit), "contact_hours": sum(earth),
+            "longest_dark_h": dark, "survives": dark <= max_dark_hours}
+
+
+def tool_analyze_custom_mission(site, month, mission_days, min_sun_hours, min_contact_hours, max_dark_hours):
+    """A NEW analysis, computed now from the hourly timeline: scan every landing time in a month
+    (every 6 hours) for a mission with the caller's own length and rules, and return the best."""
+    check_site(site)
+    if not re.fullmatch(r"2027-(0[1-9]|1[0-2])", month):
+        raise ValueError("month must look like 2027-03 (data covers 2027)")
+    if not 1 <= mission_days <= 60:
+        raise ValueError("mission_days must be between 1 and 60")
+    rows = load(f"timeline_{site}.json")["rows"]
+    n = int(mission_days * 24)
+    results = []
+    for i in range(0, len(rows) - n + 1, 6):
+        if rows[i]["time"].startswith(month):
+            m = _score_mission(rows[i:i + n], mission_days, min_sun_hours, min_contact_hours, max_dark_hours)
+            results.append({"landing": rows[i]["time"], **m})
+    if not results:
+        raise ValueError("no landing in that month leaves room for the whole mission inside 2027")
+    best = min(results, key=lambda r: (not r["survives"], -r["usable_days"], r["longest_dark_h"], -r["contact_hours"]))
+    name = site_name(site)
+    rules = (f"{mission_days:g}-day mission, usable day = at least {min_sun_hours:g} sun hours and "
+             f"{min_contact_hours:g} contact hours, survivable dark spell {max_dark_hours:g} h")
+    data = {"site": site, "month": month, "rules": rules, "landings_tested": len(results),
+            "landings_survivable": sum(r["survives"] for r in results), "best": best}
+    facts = [fact(f"{name} landings tested in {month} ({rules})", len(results)),
+             fact(f"{name} survivable landings in {month} (custom rules)", data["landings_survivable"]),
+             fact(f"{name} best custom landing in {month}", fmt_time(best["landing"])),
+             fact(f"{name} usable days, best custom landing", best["usable_days"]),
+             fact(f"{name} longest dark spell, best custom landing", best["longest_dark_h"], "h")]
+    return data, facts
+
+
+def tool_get_rover_routes(site):
+    """The planned rover routes at a site (Harril's planner): shortest route versus Sunchaser routes."""
+    check_site(site)
+    path = SHARED / f"route_{site}.json"
+    if not path.exists():
+        raise ValueError(f"no rover route has been planned for {site_name(site)} yet")
+    d = load(f"route_{site}.json")
+    name = site_name(site)
+    routes, facts = [], []
+    for r in d["routes"]:
+        routes.append({k: r[k] for k in ("name", "label", "survived", "distance_m", "duration_h",
+                                         "min_battery_pct", "survival_probability")})
+        outcome = "arrives" if r["survived"] else "freezes"
+        facts.append(fact(f"{name} {r['label']}: outcome", outcome))
+        facts.append(fact(f"{name} {r['label']}: survival probability", round(100 * r["survival_probability"], 1), "%"))
+        facts.append(fact(f"{name} {r['label']}: {'arrival' if r['survived'] else 'froze'} after",
+                          r["duration_h"], "h"))
+        if r["survived"]:
+            facts.append(fact(f"{name} {r['label']}: lowest battery", r["min_battery_pct"], "%"))
+    data = {"site": site, "monte_carlo_runs": d["monte_carlo_runs"], "routes": routes,
+            "pareto_time_vs_survival": d.get("pareto", []),
+            "note": "survival_probability is the share of Monte Carlo runs in which the rover never froze"}
+    return data, facts
+
+
 TOOLS = {
     "list_sites": (tool_list_sites, "List the candidate landing sites (ids, names, positions, current rank).",
                    {}),
@@ -250,6 +329,18 @@ TOOLS = {
                   "Usable days and cost per usable day if a landing slips by 0, 1, 2, 3 or 7 days.",
                   {"site": {"type": "string"}, "landing": {"type": "string", "description": "2027-06-19T18:00Z"},
                    "budget": {"type": "number", "description": "mission budget, any currency"}}),
+    "analyze_custom_mission": (tool_analyze_custom_mission,
+                               "Run a NEW analysis: best landing in a month for a mission with custom length "
+                               "and custom usable-day and survival rules (computed live from the timeline).",
+                               {"site": {"type": "string"}, "month": {"type": "string", "description": "e.g. 2027-03"},
+                                "mission_days": {"type": "number"},
+                                "min_sun_hours": {"type": "number", "description": "sun hours per usable day"},
+                                "min_contact_hours": {"type": "number", "description": "Earth-contact hours per usable day"},
+                                "max_dark_hours": {"type": "number", "description": "longest survivable dark spell"}}),
+    "get_rover_routes": (tool_get_rover_routes,
+                         "Planned rover routes at a site: the shortest route versus the sun-chasing routes, "
+                         "with survival probabilities.",
+                         {"site": {"type": "string"}}),
 }
 
 
@@ -459,6 +550,7 @@ SITE_WORDS = {  # words people use -> site id (longest phrases are checked first
     "cabeus": "cabeus_b_peak", "haworth": "haworth", "malapert": "malapert_massif", "slater": "slater_plain",
 }
 EXAMPLES = ["Which site is best in June?", "When should we land at Malapert in March?",
+            "Does the rover survive at Slater Plain?", "Best landing for a 5-day mission at Mons Mouton in June?",
             "How dark does Haworth get in August?", "What does a 2-day slip cost at Mons Mouton with a $50 million budget?"]
 
 
@@ -513,6 +605,34 @@ def fact_finder(question, site=None):
     scores = load("scores.json")
     month = _find_month(question) or scores["window_start"][:7]
     month_name = MONTHS[int(month[5:]) - 1].capitalize()
+
+    if re.search(r"\b(rover|route|routes|drive|driving|traverse|freeze|freezes|frozen|sunchaser|path)\b", q):
+        with_routes = [x for x in site_ids() if (SHARED / f"route_{x}.json").exists()]
+        rid = sid if sid in with_routes else ("slater_plain" if "slater_plain" in with_routes else
+                                             (with_routes[0] if with_routes else None))
+        if rid:
+            d, facts = tool_get_rover_routes(rid)
+            parts = []
+            for r in d["routes"]:
+                pct = f"{round(100 * r['survival_probability'], 1):g}%"
+                if r["survived"]:
+                    parts.append(f"{r['label']} arrives after {r['duration_h']:g} hours with at least "
+                                 f"{r['min_battery_pct']:g}% battery (survival probability {pct})")
+                else:
+                    parts.append(f"{r['label']} freezes after {r['duration_h']:g} hours (survival probability {pct})")
+            ans = f"At {site_name(rid)}: " + "; ".join(parts) + "."
+            return {"answer": ans, "facts_used": facts}
+
+    m_days = re.search(r"\b(\d{1,2})[- ]day\b(?!\s+slip)", q)
+    if sid and m_days and re.search(r"\bmission\b", q):
+        days = int(m_days.group(1))
+        d, facts = tool_analyze_custom_mission(sid, month, days, 12, 4, 18)
+        b = d["best"]
+        ans = (f"New analysis for a {days}-day mission at {site_name(sid)} in {month_name} 2027: "
+               f"{d['landings_survivable']} of {d['landings_tested']} landing times are survivable. The best is "
+               f"{fmt_time(b['landing'])} with {b['usable_days']} usable days and a longest dark spell of "
+               f"{b['longest_dark_h']} hours ({'survivable' if b['survives'] else 'NOT survivable'}).")
+        return {"answer": ans, "facts_used": facts}
 
     if re.search(r"\b(slip|slips|slipped|slippage|delay|delayed|postpone|postponed)\b", q):
         sid = sid or scores["sites"][0]["site"]

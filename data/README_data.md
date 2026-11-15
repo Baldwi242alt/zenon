@@ -159,37 +159,55 @@ shadow grid and for horizon plots on the Methods page. `data/tests/test_real_out
 row: `sun_frac` agrees with the formula, `earth_visible` agrees with the elevations, and every hour of
 2027 is present.
 
-## Stage 6: shadow grid (`shared/grid_slater_plain.json`)
+## Stage 6 / 10 / 14: shadow grids (`shared/grid_SITE.json`, all 9 sites)
 
 ```bash
-python data/build_grid.py --scan     # ~10 min first time (per-cell horizons cached in data/cache/grids/)
-python data/build_grid.py --site slater_plain --start 2027-10-27T00:00Z
+python data/build_grid.py --year             # per-cell horizons + a year of sunlight, cached (about 1 min per site)
+python planner/find_scenarios.py             # Harril's planner picks each site's 14-day window
+python data/build_grid.py --from-scenarios   # write shared/grid_SITE.json for those windows
 ```
 
-64 x 64 cells of 40 m (2.56 km square) centred on the Slater Plain point, 336 hourly steps (14 days),
-aligned with the south-polar map (0 degrees longitude up). File size 4.7 MB.
+64 x 64 cells of **80 m** (a 5.1 km x 5.1 km operations area) centred on each site, 336 hourly steps (14 days),
+aligned with the south-polar map (0 degrees longitude up). 3.8-5.1 MB per site, so the website should load only
+the selected site's grid.
 
 **How each cell's sunlight is computed** (`sunchaser_data/grid.py`):
 - Near terrain (within 15 km): ray-cast from every cell on the LOLA 20 m DEM, 360 directions.
-- Far terrain (15-150 km): heights along each ray read once from the centre on the LOLA 120 m DEM;
-  each cell computes its own angle to them from its own ground height.
-- Sun position from the site's timeline; each cell's Sun elevation is corrected for lunar curvature
-  (a cell 1 km closer to the Sun sees it about 0.03 degrees higher).
+- Far terrain (15-150 km): rays cast on the LOLA 120 m DEM once per block of 8 x 8 cells; each cell computes
+  its own angle to that terrain from its own ground height.
+- The Sun's position comes from the site's timeline and is corrected per cell twice: for lunar curvature
+  (a cell 1 km closer to the Sun sees it about 0.03 degrees higher) and for the turning of local north with
+  longitude near the pole (the Sun's azimuth differs by a few degrees across 5 km).
 - `sun_pct` = round(100 x visible fraction of the Sun's disk).
 
-**Why Slater Plain, 27 Oct - 10 Nov 2027:** `--scan` scored every daily 14-day window in 2027 at all 9 sites
-for drama: shadows that move (cells lit 20-80% of the time), a mix of survivable and deadly cells
-(longest dark spell above the 18 h placeholder limit), and plenty of light at the start. Slater Plain scored
-highest (0.205) and is also the most drivable site: only 1% of cells are steeper than 15 degrees
-(Malapert 21%, Nobile Rim 1 26%). Over the window the lit share falls day by day from 92% to 31% as the
-Sun sinks, so the rover is racing the dark. The best window at every site is in
-`data/sites/grid_window_options.csv` if Harril prefers another (Mons Mouton is the best near-side option
-with good Earth contact and 5% steep cells).
+**Why 80 m cells and not 40 m.** The first grids were 2.56 km across (40 m cells). Tested on every site, the
+reference rover's battery never fell below 48% on any crossing: no crossing takes longer than about 15 hours and
+the rover survives about 22 hours of darkness, so no route could fail and the sun-chasing planner had nothing to
+beat. We enlarged the area to 5.1 km, where traverses take 20-35 hours. The rover's specifications were not
+changed.
 
-**Limits:** azimuths every 1 degree; far terrain is ray-cast from the centre, not per cell; 40 m cells smooth
-out smaller features; the rover's 2 m mast is the observer height. Near summits the horizon changes quickly
-with height: at Malapert, a cell's averaged ground sits 0.5 m below the summit point, which raises nearby
-horizon angles by about 0.13 degrees. That's real, not an error.
+**How each window was chosen** (handbook B.11, "pick a dramatic window with Harril"): the planner searched all of
+2027 at each site for a departure and a start/target pair where the shortest route freezes and the sun-chasing
+route survives (`planner/find_scenarios.py`, results in `planner/scenarios.json`). The grid window starts 24
+hours before that departure.
+
+| Site | Window start | Cell-hours lit | Lit, first day → last day | Cells steeper than 15° | Relief |
+| --- | --- | --- | --- | --- | --- |
+| Peak near Cabeus B | 2027-12-07 | 76% | 11% → 94% | 56% | 1776 m |
+| Haworth | 2027-10-20 | 51% | 57% → 48% | 7% | 548 m |
+| Malapert Massif | 2027-12-14 | 61% | 54% → 52% | 62% | 1056 m |
+| Mons Mouton Plateau | 2027-01-16 | 58% | 62% → 0% | 3% | 443 m |
+| Mons Mouton | 2027-09-21 | 50% | 67% → 29% | 31% | 969 m |
+| Nobile Rim 1 | 2027-12-05 | 44% | 48% → 55% | 49% | 1395 m |
+| Nobile Rim 2 | 2027-10-03 | 81% | 58% → 69% | 12% | 663 m |
+| de Gerlache Rim 2 | 2027-10-16 | 54% | 54% → 46% | 51% | 837 m |
+| Slater Plain | 2027-10-03 | 35% | 56% → 33% | 2% | 437 m |
+
+The ridge sites (Malapert, de Gerlache Rim 2, Nobile Rim 1, Cabeus B) are well lit but steep: a real trade-off
+between power and mobility.
+
+**Limits:** azimuths every 1 degree; far terrain ray-cast per block of cells; 80 m cells average out smaller
+features; the observer is the rover's 2 m mast; hourly steps.
 
 ## Stage 7: scores and AI briefs (`shared/scores.json`)
 
@@ -275,32 +293,6 @@ Moon highest in its sky, but only when Earth is also visible from the lunar site
 
 **Limits:** the Moon's centre is used (a south-pole site sits about 1,737 km from it, shifting elevations seen
 from Earth by up to about 0.3 degrees); antenna scheduling and other missions are ignored.
-
-## Stage 10: shadow grids for every site (`shared/grid_SITE.json`)
-
-```bash
-python data/build_grid.py --scan   # once: per-cell horizons for all sites + best windows (~10 min)
-python data/build_grid.py --all    # writes every site's grid at its best window (seconds, uses the cache)
-```
-
-Same method as Stage 6, one 64 x 64 x 336 grid per site, each at the window the scan scored best for that site
-(`data/sites/grid_window_options.csv`). 41 MB in total, 4.3-5.3 MB each, so the website should load only the
-selected site's grid.
-
-| Site | Window start | Cell-hours lit | Cells steeper than 15 degrees |
-| --- | --- | --- | --- |
-| Slater Plain (demo) | 2027-10-27 | 67% | 1% |
-| Nobile Rim 2 | 2027-12-03 | 84% | 0% |
-| Mons Mouton Plateau | 2027-10-06 | 77% | 3% |
-| Mons Mouton | 2027-10-13 | 58% | 5% |
-| Haworth | 2027-10-23 | 53% | 10% |
-| Malapert Massif | 2027-10-19 | 61% | 21% |
-| Nobile Rim 1 | 2027-11-15 | 54% | 26% |
-| Peak near Cabeus B | 2027-01-22 | 91% | 30% |
-| de Gerlache Rim 2 | 2027-10-21 | 53% | 35% |
-
-The steep sites (Cabeus B, de Gerlache Rim 2, Nobile Rim 1) are ridges and peaks: good for sunlight, hard for
-driving. That is a real trade-off worth showing in Rover Ops.
 
 ## Stage 11: validation (`python data/validate.py`, results in `data/sites/validation.json`)
 

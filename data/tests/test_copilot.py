@@ -218,3 +218,43 @@ def test_busy_gemini_model_moves_to_the_next_one():
     assert out["answer"] == answer
     # First call tried both; after that the conversation stays on the model that answered.
     assert calls == ["busy-model", "ok-model", "ok-model"]
+
+
+# ---------- stage 15: live analysis and rover routes ----------
+
+def test_custom_mission_with_default_rules_matches_precomputed_windows():
+    # With the standard rules (10 days, 12 sun h, 4 contact h, 18 h dark limit) the live analysis
+    # must reproduce the precomputed windows file exactly.
+    data, facts = copilot.tool_analyze_custom_mission("mons_mouton", "2027-06", 10, 12, 4, 18)
+    rows = {r["landing"]: r for r in copilot.load("windows_mons_mouton.json")["rows"]}
+    pre = rows[data["best"]["landing"]]
+    assert data["best"]["usable_days"] == pre["usable_days"]
+    assert data["best"]["longest_dark_h"] == pre["longest_dark_h"]
+    assert data["landings_survivable"] == sum(r["survives"] for l, r in rows.items() if l.startswith("2027-06"))
+
+
+def test_custom_mission_changes_with_the_rules():
+    strict, _ = copilot.tool_analyze_custom_mission("haworth", "2027-08", 10, 12, 4, 6)
+    loose, _ = copilot.tool_analyze_custom_mission("haworth", "2027-08", 10, 12, 4, 200)
+    assert loose["landings_survivable"] >= strict["landings_survivable"]
+    assert loose["landings_survivable"] == loose["landings_tested"]      # a 200 h limit is never exceeded here
+    text, _, is_error = copilot.run_tool("analyze_custom_mission",
+                                         {"site": "haworth", "month": "2027-08", "mission_days": 500,
+                                          "min_sun_hours": 12, "min_contact_hours": 4, "max_dark_hours": 18})
+    assert is_error and "between 1 and 60" in text
+
+
+def test_rover_routes_tool_reports_the_planner_file():
+    if not (copilot.SHARED / "route_slater_plain.json").exists():
+        pytest.skip("routes not built")
+    data, facts = copilot.tool_get_rover_routes("slater_plain")
+    raw = json.loads((copilot.SHARED / "route_slater_plain.json").read_text())
+    assert [r["name"] for r in data["routes"]] == [r["name"] for r in raw["routes"]]
+    assert data["routes"][0]["survival_probability"] == raw["routes"][0]["survival_probability"]
+    out = copilot.answer_without_ai("Does the rover survive at Slater Plain?")
+    assert "Shortest path" in out["answer"] and "Sunchaser" in out["answer"]
+
+
+def test_fact_finder_runs_a_custom_mission_analysis():
+    out = copilot.answer_without_ai("Best landing for a 5-day mission at Mons Mouton in June?")
+    assert "5-day mission" in out["answer"] and "Mons Mouton" in out["answer"]
