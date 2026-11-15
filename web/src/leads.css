@@ -123,3 +123,7 @@
 .pg-credit { background: rgba(0, 0, 0, 0.72); padding: 6px 10px; color: #cfc9bd; }
 .ca-tag { color: #e6e1d6; }
 .ca-frame .ca-tag.br { color: #cfc9bd; }
+
+/* site map: leader lines for labels moved away from crowded markers */
+.arch .map .leader { stroke: rgba(242, 165, 65, 0.7); stroke-width: 1.2; }
+.arch .marker text { paint-order: stroke; stroke: rgba(0, 0, 0, 0.85); stroke-width: 4px; }

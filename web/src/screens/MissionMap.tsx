@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import basemap from '../assets/south_pole.jpg'
 import { Horizon } from '../components/Horizon'
@@ -27,6 +28,46 @@ export default function MissionMap() {
   )
 }
 
+
+// Label placement: try positions around each marker (nearest first, then farther ones with a
+// leader line) and keep the first whose box hits no other label, marker or map edge. Sites are
+// placed in rank order, so the best sites get the best spots. Units are the 1000 x 1000 viewBox.
+type Placed = { dx: number; dy: number; anchor: 'start' | 'end' | 'middle'; leader: boolean }
+const CANDIDATES: Placed[] = [
+  { dx: 17, dy: 5, anchor: 'start', leader: false }, { dx: -17, dy: 5, anchor: 'end', leader: false },
+  { dx: 0, dy: -19, anchor: 'middle', leader: false }, { dx: 0, dy: 29, anchor: 'middle', leader: false },
+  { dx: 14, dy: -14, anchor: 'start', leader: false }, { dx: 14, dy: 24, anchor: 'start', leader: false },
+  { dx: -14, dy: -14, anchor: 'end', leader: false }, { dx: -14, dy: 24, anchor: 'end', leader: false },
+  { dx: 38, dy: -32, anchor: 'start', leader: true }, { dx: -38, dy: -32, anchor: 'end', leader: true },
+  { dx: 38, dy: 42, anchor: 'start', leader: true }, { dx: -38, dy: 42, anchor: 'end', leader: true },
+]
+type Box = [number, number, number, number]   // x0, y0, x1, y1
+const hit = (a: Box, b: Box) => a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3]
+function labelBox(x: number, y: number, c: Placed, text: string): Box {
+  const w = text.length * 8.6 + 6, lx = x + c.dx, ly = y + c.dy
+  const x0 = c.anchor === 'start' ? lx : c.anchor === 'end' ? lx - w : lx - w / 2
+  return [x0, ly - 15, x0 + w, ly + 5]
+}
+export function placeLabels(items: { id: string; x: number; y: number; text: string }[], fixed: Box[]): Record<string, Placed> {
+  const boxes: Box[] = [...fixed, ...items.map(i => [i.x - 16, i.y - 16, i.x + 16, i.y + 16] as Box)]
+  const out: Record<string, Placed> = {}
+  for (const it of items) {
+    let best = CANDIDATES[0], bestScore = Infinity
+    for (const c of CANDIDATES) {
+      const b = labelBox(it.x, it.y, c, it.text)
+      const own: Box = [it.x - 16, it.y - 16, it.x + 16, it.y + 16]
+      const out_ = b[0] < 8 || b[2] > 992 || b[1] < 30 || b[3] > 975
+      const clashes = boxes.filter(o => !(o[0] === own[0] && o[1] === own[1]) && hit(b, o)).length + (out_ ? 5 : 0)
+      const score = clashes * 100 + CANDIDATES.indexOf(c)
+      if (score < bestScore) { bestScore = score; best = c }
+      if (clashes === 0) break
+    }
+    out[it.id] = best
+    boxes.push(labelBox(it.x, it.y, best, it.text))
+  }
+  return out
+}
+
 function Map({ sites, scores }: { sites: Site[]; scores: Scores }) {
   const { site, setSite } = useStore()
   const rank = Object.fromEntries(scores.sites.map(r => [r.site, r]))
@@ -34,6 +75,15 @@ function Map({ sites, scores }: { sites: Site[]; scores: Scores }) {
   const row = rank[sel.id]
   const top = scores.sites[0]
   const topName = sites.find(s => s.id === top.site)!.name
+  const labels = useMemo(() => {
+    const items = [...sites].sort((a, b) => (rank[a.id]?.rank ?? 99) - (rank[b.id]?.rank ?? 99)).map(st => {
+      const [fx, fy] = mapXY(st.lat, st.lon)
+      return { id: st.id, x: fx * 1000, y: fy * 1000, text: `${rank[st.id] ? `${rank[st.id].rank}. ` : ''}${st.name}` }
+    })
+    // fixed obstacles: the pole marker and the compass labels
+    const fixed: [number, number, number, number][] = [[494, 480, 600, 506], [470, 8, 530, 34], [880, 488, 992, 512], [460, 972, 540, 998], [8, 488, 120, 512]]
+    return placeLabels(items, fixed)
+  }, [sites, rank])
   return (
     <>
       <div className="hero">
@@ -59,9 +109,9 @@ function Map({ sites, scores }: { sites: Site[]; scores: Scores }) {
             <circle cx={500} cy={500} r={4} fill="#fff" opacity={0.8} />
             <text x={508} y={496} className="axis" fill="#fff">South Pole</text>
             <text x={500} y={22} className="axis" textAnchor="middle" fill="#cfd6e3">0°</text>
-            <text x={986} y={504} className="axis" textAnchor="end" fill="#cfd6e3">90° E</text>
+            <text x={982} y={504} className="axis" textAnchor="end" fill="#cfd6e3">90° E</text>
             <text x={500} y={990} className="axis" textAnchor="middle" fill="#cfd6e3">180°</text>
-            <text x={14} y={504} className="axis" fill="#cfd6e3">90° W</text>
+            <text x={18} y={504} className="axis" fill="#cfd6e3">90° W</text>
             {sites.map(s => {
               const [fx, fy] = mapXY(s.lat, s.lon)
               const r = rank[s.id]
@@ -71,7 +121,8 @@ function Map({ sites, scores }: { sites: Site[]; scores: Scores }) {
                    onClick={() => setSite(s.id)} role="button" aria-label={s.name}>
                   <circle className="ring" r={isSel ? 15 : 11} />
                   <circle className="dot" r={4} />
-                  <text x={16} y={5}>{r ? `${r.rank}. ` : ''}{s.name}</text>
+                  {labels[s.id]?.leader && <line className="leader" x1={labels[s.id].dx > 0 ? 9 : -9} y1={labels[s.id].dy > 0 ? 9 : -9} x2={labels[s.id].dx * 0.82} y2={labels[s.id].dy - 6} />}
+                  <text x={labels[s.id]?.dx ?? 16} y={labels[s.id]?.dy ?? 5} textAnchor={labels[s.id]?.anchor ?? 'start'}>{r ? `${r.rank}. ` : ''}{s.name}</text>
                 </g>
               )
             })}
