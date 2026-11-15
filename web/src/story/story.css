@@ -1,10 +1,6 @@
 /* Sunchaser landing page, in the Celestial Archive style of our earlier project:
    black void, serif display (STIX Two), typewriter labels, Orbitron wordmark, hairline rules,
    boxed figure grids, sticky survey index. The Moon's palette is silver; the Sun is the accent. */
-@font-face { font-family: "Orbitron"; src: url("../assets/fonts/orbitron-variable.woff2") format("woff2"); font-weight: 400 900; font-display: swap; }
-@font-face { font-family: "STIX Two Text"; src: url("../assets/fonts/stix-two-text.ttf") format("truetype"); font-weight: 400 700; font-display: swap; }
-@font-face { font-family: "Traveling Typewriter"; src: url("../assets/fonts/traveling-typewriter.ttf") format("truetype"); font-display: swap; }
-
 .ca {
   --void: #030303; --surface: #0b0b0c; --text: #f2f0eb; --muted: #bdb9b0; --dim: #85817a;
   --line: rgba(235, 228, 210, 0.15); --line-soft: rgba(235, 228, 210, 0.08);
@@ -18,34 +14,6 @@
   color: var(--text); font-family: var(--ui); min-height: 100vh;
 }
 .ca a { color: inherit; }
-
-/* nav */
-.ca-nav { position: fixed; inset: 0 0 auto; z-index: 30; height: 64px; display: flex; align-items: center; justify-content: space-between;
-  padding: 0 var(--gutter); background: linear-gradient(180deg, rgba(3, 3, 3, 0.92), rgba(3, 3, 3, 0.6)); border-bottom: 1px solid var(--line-soft);
-  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
-.ca-brand { display: flex; align-items: center; gap: 12px; font: 600 14px var(--orbit); letter-spacing: 0.22em; text-decoration: none; }
-.ca-brand-mark { width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle at 70% 40%, #f4f1ea 0 38%, #1a1a1a 40%);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3), -3px 0 8px rgba(242, 165, 65, 0.6); }
-.ca-nav nav { display: flex; gap: 26px; align-items: center; font: 14px var(--serif); }
-.ca-nav nav a { text-decoration: none; color: var(--muted); padding: 6px 0; border-bottom: 1px solid transparent; transition: color 0.2s, border-color 0.2s; }
-.ca-nav nav a:hover { color: var(--text); border-bottom-color: var(--accent); }
-.ca-nav .ca-nav-cta { color: #160d02; background: var(--accent); padding: 8px 16px; border-radius: 2px; font: 600 11px var(--type); letter-spacing: 0.12em; text-transform: uppercase; border: 0; }
-.ca-nav .ca-nav-cta:hover { color: #160d02; background: var(--accent-pale); }
-
-/* type */
-.ca-eyebrow { font: 11px var(--type); letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin: 0 0 18px; }
-.ca-title { font: 600 clamp(64px, 10vw, 150px)/0.92 var(--serif); letter-spacing: 0.06em; margin: 0;
-  background: linear-gradient(40deg, #ffffff 30%, #c9c3b6 60%, var(--accent-pale) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.ca-subtitle { font: italic 400 clamp(20px, 2vw, 28px) var(--serif); color: var(--muted); margin: 14px 0 0; }
-.ca-display { font: 400 clamp(46px, 7vw, 104px)/1 var(--serif); letter-spacing: -0.01em; margin: 0; text-align: center; }
-.ca-h1 { font: 400 clamp(38px, 4.6vw, 66px)/1.04 var(--serif); letter-spacing: -0.01em; margin: 0 0 22px; }
-.ca-h2 { font: 400 clamp(30px, 3vw, 44px)/1.1 var(--serif); margin: 0 0 16px; }
-.ca-h3 { font: 400 30px/1.1 var(--serif); margin: 0 0 12px; }
-.ca-body { font: 400 17px/1.75 var(--ui); color: var(--muted); max-width: 640px; margin: 0; }
-.ca-small { font: 13px/1.6 var(--ui); color: var(--dim); margin: 12px 0 0; }
-.ca-small.mono { font-family: var(--type); letter-spacing: 0.08em; }
-.center { text-align: center; margin-left: auto; margin-right: auto; }
-.ca-hint { font: 11px var(--type); letter-spacing: 0.18em; text-transform: uppercase; color: var(--dim); margin-top: 46px; }
 
 /* layout */
 .ca-section { width: min(calc(100% - var(--gutter) * 2), var(--max)); margin: 0 auto; padding: clamp(5rem, 10vw, 9rem) 0; border-bottom: 1px solid var(--line-soft); }

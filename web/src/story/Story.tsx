@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Horizon } from '../components/Horizon'
+import { SiteNav } from '../components/SiteNav'
 import { useJson, useRover } from '../data'
 import type { Grid, RouteFile, Scores, Timeline } from '../types'
 import im2Launch from '../assets/nasa/im2_launch.jpg'
@@ -24,7 +25,7 @@ const ROVER_FRAMES = byName(import.meta.glob('../assets/viz/rover/*.webp', { eag
 export default function Story() {
   return (
     <div className="ca">
-      <Nav />
+      <SiteNav />
       <Hero />
       <Survey />
       <ShadowFeature />
@@ -37,19 +38,6 @@ export default function Story() {
       <Tools />
       <Footer />
     </div>
-  )
-}
-
-function Nav() {
-  return (
-    <header className="ca-nav">
-      <Link to="/" className="ca-brand"><span className="ca-brand-mark" aria-hidden="true" />SUNCHASER</Link>
-      <nav aria-label="Main">
-        <Link to="/map">Sites</Link><Link to="/light">Light</Link><Link to="/windows">Windows</Link>
-        <Link to="/rover">Rover</Link><Link to="/business">Business</Link><Link to="/methods">Methods</Link>
-        <Link to="/copilot" className="ca-nav-cta">Ask the copilot</Link>
-      </nav>
-    </header>
   )
 }
 
