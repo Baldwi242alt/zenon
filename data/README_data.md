@@ -188,20 +188,21 @@ changed.
 
 **How each window was chosen** (handbook B.11, "pick a dramatic window with Harril"): the planner searched all of
 2027 at each site for a departure and a start/target pair where the shortest route freezes and the sun-chasing
-route survives (`planner/find_scenarios.py`, results in `planner/scenarios.json`). The grid window starts 24
+route survives and can then park safely at its target (`planner/find_scenarios.py`, results in
+`planner/scenarios.json`). The grid window starts 24
 hours before that departure.
 
 | Site | Window start | Cell-hours lit | Lit, first day → last day | Cells steeper than 15° | Relief |
 | --- | --- | --- | --- | --- | --- |
-| Peak near Cabeus B | 2027-12-07 | 76% | 11% → 94% | 56% | 1776 m |
-| Haworth | 2027-10-20 | 51% | 57% → 48% | 7% | 548 m |
-| Malapert Massif | 2027-12-14 | 61% | 54% → 52% | 62% | 1056 m |
+| Peak near Cabeus B | 2027-11-09 | 83% | 29% → 89% | 56% | 1776 m |
+| Haworth | 2027-12-16 | 39% | 51% → 0% | 7% | 548 m |
+| Malapert Massif | 2027-04-25 | 29% | 59% → 0% | 62% | 1056 m |
 | Mons Mouton Plateau | 2027-01-16 | 58% | 62% → 0% | 3% | 443 m |
-| Mons Mouton | 2027-09-21 | 50% | 67% → 29% | 31% | 969 m |
-| Nobile Rim 1 | 2027-12-05 | 44% | 48% → 55% | 49% | 1395 m |
-| Nobile Rim 2 | 2027-10-03 | 81% | 58% → 69% | 12% | 663 m |
-| de Gerlache Rim 2 | 2027-10-16 | 54% | 54% → 46% | 51% | 837 m |
-| Slater Plain | 2027-10-03 | 35% | 56% → 33% | 2% | 437 m |
+| Mons Mouton | 2027-01-01 | 36% | 58% → 11% | 31% | 969 m |
+| Nobile Rim 1 | 2027-08-21 | 43% | 29% → 46% | 49% | 1395 m |
+| Nobile Rim 2 | 2027-12-01 | 80% | 63% → 62% | 12% | 663 m |
+| de Gerlache Rim 2 | 2027-12-07 | 53% | 43% → 68% | 51% | 837 m |
+| Slater Plain | 2027-10-30 | 41% | 56% → 0% | 2% | 437 m |
 
 The ridge sites (Malapert, de Gerlache Rim 2, Nobile Rim 1, Cabeus B) are well lit but steep: a real trade-off
 between power and mobility.

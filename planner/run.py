@@ -93,7 +93,7 @@ def plan_site(site, rover, start=None, target=None, depart=None, log=print):
     naive_mc = survival_probability(world, naive_plan, depart, n=MC_RUNS)
     routes = [route_entry("shortest", naive, naive_mc)]
 
-    levels = pareto_routes(world, start, target, depart, runs=MC_RUNS, change_soon=cs)
+    levels = pareto_routes(world, start, target, depart, runs=MC_RUNS, change_soon=cs, log=log)
     pareto = []
     if levels:
         fast = levels[0]
@@ -101,7 +101,8 @@ def plan_site(site, rover, start=None, target=None, depart=None, log=print):
         if len(levels) > 1:
             # "Max margin": the route with the best survival odds (ties go to the bigger reserve).
             safe = max(levels[1:], key=lambda p: (p["mc"]["survival_probability"], p["reserve_pct"]))
-            if safe["mc"]["survival_probability"] >= fast["mc"]["survival_probability"]:
+            same = safe["result"]["steps"] == fast["result"]["steps"]     # no safer route exists: don't list it twice
+            if not same and safe["mc"]["survival_probability"] >= fast["mc"]["survival_probability"]:
                 routes.append(route_entry("sunchaser_safe", safe["result"], safe["mc"]))
         pareto = [{"reserve_pct": p["reserve_pct"], "duration_h": p["result"]["duration_h"],
                    "survival_probability": round(p["mc"]["survival_probability"], 3)} for p in levels]
@@ -140,6 +141,15 @@ def plan_site(site, rover, start=None, target=None, depart=None, log=print):
     return data
 
 
+def _plan_quietly(site, rover):
+    lines = []
+    try:
+        plan_site(site, rover, log=lines.append)
+    except SystemExit as exc:
+        lines.append(f"{site}: FAILED: {exc}")
+    return lines
+
+
 def parse_rc(text):
     r, c = text.split(",")
     return int(r), int(c)
@@ -152,6 +162,7 @@ def main():
     ap.add_argument("--start", type=parse_rc, help="row,col")
     ap.add_argument("--target", type=parse_rc, help="row,col")
     ap.add_argument("--depart", type=int, help="hour index in the grid when the rover leaves")
+    ap.add_argument("--jobs", type=int, default=3, help="sites planned in parallel with --all")
     args = ap.parse_args()
     rover, source = load_rover()
     print(f"Rover: {source}")
@@ -162,8 +173,17 @@ def main():
         sites = [args.site]
     else:
         ap.error("give --site ID or --all")
-    for site in sites:
-        plan_site(site, rover, args.start, args.target, args.depart)
+    if len(sites) > 1 and args.jobs > 1:
+        # Sites are independent, so plan them side by side. Each worker collects its own
+        # log lines and they are printed when that site finishes.
+        from concurrent.futures import ProcessPoolExecutor, as_completed
+        with ProcessPoolExecutor(max_workers=args.jobs) as pool:
+            futures = {pool.submit(_plan_quietly, site, rover): site for site in sites}
+            for fut in as_completed(futures):
+                print("\n".join(fut.result()), flush=True)
+    else:
+        for site in sites:
+            plan_site(site, rover, args.start, args.target, args.depart)
 
 
 if __name__ == "__main__":

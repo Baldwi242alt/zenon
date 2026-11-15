@@ -36,6 +36,38 @@ time in a year, plans rover routes that survive the moving shadows, and puts a n
 ## Headline results
 
 <!-- RESULTS:START -->
+**Where and when to land** (best landing in June 2027, 10-day mission; year-round light and contact):
+
+| Rank | Site | Best landing | Usable days | Sunlit, 2027 | Earth in view, 2027 | Landings the rover survives, 2027 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Peak near Cabeus B | 19 Jun 18:00 UTC | 10 of 10 | 52% | 69% | 24% |
+| 2 | de Gerlache Rim 2 | 22 Jun 06:00 UTC | 10 of 10 | 77% | 53% | 45% |
+| 3 | Haworth | 21 Jun 06:00 UTC | 10 of 10 | 66% | 55% | 32% |
+| 4 | Mons Mouton | 16 Jun 12:00 UTC | 8 of 10 | 76% | 73% | 48% |
+| 5 | Slater Plain | 1 Jun 00:00 UTC | 6 of 10 | 58% | 32% | 29% |
+| 6 | Malapert Massif | 13 Jun 18:00 UTC | 5 of 10 | 68% | 71% | 37% |
+| 7 | Nobile Rim 2 | 8 Jun 06:00 UTC | 3 of 10 | 51% | 61% | 23% |
+| 8 | Mons Mouton Plateau | 10 Jun 12:00 UTC | 0 of 10 | 41% | 57% | 14% |
+| 9 | Nobile Rim 1 | 27 Jun 12:00 UTC | 7 of 10 (not survivable) | 81% | 62% | 54% |
+
+Across the year only 14-54% of landing times are survivable, depending on the site: *when* you land matters as much as *where*.
+
+**How to drive** (a 4-5 km traverse at each site; survival = share of 500 Monte Carlo runs in which the rover never froze, on the way or in the 24 hours parked at the destination):
+
+| Site | Shortest route | Sunchaser (fastest safe) | Sunchaser (max margin) |
+| --- | --- | --- | --- |
+| Peak near Cabeus B | arrives in 20.0 h, survival 2% | arrives in 24.6 h, survival 95% | arrives in 30.3 h, survival 100% |
+| Haworth | **freezes** after 19.8 h, survival 33% | arrives in 22.5 h, survival 100% | the fastest safe route is already the safest found |
+| Malapert Massif | arrives in 23.5 h, survival 71% | arrives in 23.5 h, survival 80% | the fastest safe route is already the safest found |
+| Mons Mouton Plateau | **freezes** after 16.0 h, survival 1% | arrives in 24.4 h, survival 100% | arrives in 24.7 h, survival 100% |
+| Mons Mouton | **freezes** after 16.5 h, survival 3% | arrives in 20.6 h, survival 97% | the fastest safe route is already the safest found |
+| Nobile Rim 1 | **freezes** after 15.7 h, survival 5% | arrives in 19.6 h, survival 100% | the fastest safe route is already the safest found |
+| Nobile Rim 2 | **freezes** after 20.1 h, survival 0% | arrives in 26.1 h, survival 96% | arrives in 28.1 h, survival 100% |
+| de Gerlache Rim 2 | **freezes** after 16.5 h, survival 0% | arrives in 23.4 h, survival 100% | the fastest safe route is already the safest found |
+| Slater Plain | **freezes** after 17.1 h, survival 10% | arrives in 20.5 h, survival 100% | the fastest safe route is already the safest found |
+
+At 7 of 9 sites the shortest route freezes in the scenario found by searching 2027; the sun-chasing route arrives every time. These are real windows of 2027 found by search, not staged cases: `planner/find_scenarios.py`.
+
 <!-- RESULTS:END -->
 
 All of the above use the placeholder rover and criteria from the project brief (`CLAUDE.md` 2.6 and 2.7)

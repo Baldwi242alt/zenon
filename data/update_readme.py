@@ -65,7 +65,7 @@ def build():
 
         def cell(x):
             if x is None:
-                return "none found"
+                return "the fastest safe route is already the safest found"
             p = f"{100 * x['survival_probability']:.0f}%"
             if x["survived"]:
                 return f"arrives in {x['duration_h']:.1f} h, survival {p}"
@@ -76,7 +76,7 @@ def build():
                     f"{cell(r.get('sunchaser_safe'))} |")
     if rows:
         out.append("**How to drive** (a 4-5 km traverse at each site; survival = share of 500 Monte Carlo runs in "
-                   "which the rover never froze):\n")
+                   "which the rover never froze, on the way or in the 24 hours parked at the destination):\n")
         out.append("| Site | Shortest route | Sunchaser (fastest safe) | Sunchaser (max margin) |")
         out.append("| --- | --- | --- | --- |")
         out.extend(rows)

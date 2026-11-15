@@ -9,7 +9,8 @@ scenario"):
      the 5.1 km grid, at least 3.8 km apart.
   2. For each pair, the shortest route is found once, then replayed for a departure
      every 12 hours of the year. Departures are kept when the rover starts in
-     sunlight (it had a chance to charge) and the shortest route FREEZES.
+     sunlight (it had a chance to charge), the target is somewhere a rover could
+     park safely in the following days, and the shortest route FREEZES.
   3. The most promising of those are handed to the space-time planner, on a 14-day
      window that starts one day before departure. Both routes get a Monte Carlo
      survival probability.
@@ -92,7 +93,7 @@ def iso(start, hours):
     return t.strftime("%Y-%m-%dT%H:%MZ")
 
 
-def search_site(site_id, rover, log=print):
+def search_site(site_id, rover, log=print, min_separation_m=MIN_SEPARATION_M):
     t_begin = time.time()
     year = load_year(site_id)
     n_year = year["sun"].shape[0]
@@ -101,18 +102,35 @@ def search_site(site_id, rover, log=print):
     pairs = []
     for a in pts:
         for b in pts:
-            if a != b and world.octile_m(world.idx(*a), world.idx(*b)) >= MIN_SEPARATION_M:
+            if a != b and world.octile_m(world.idx(*a), world.idx(*b)) >= min_separation_m:
                 path = shortest_path(world, a, b)
                 if path:
                     pairs.append((a, b, path_to_plan(world, path)))
     log(f"{site_id}: {len(pts)} endpoints, {len(pairs)} start/target pairs")
 
+    # A target is only worth driving to if a rover could sit there: at some arrival time in the
+    # next few days, a rover arriving with 60% battery must be able to park for 24 h above its
+    # reserve. (Cheap test; the planner applies the exact rule later.)
+    host_cache = {}
+
+    def can_host(dep, cell):
+        key = (dep, cell)
+        if key not in host_cache:
+            idx, ok = world.idx(*cell), False
+            for t in range(dep + 16, dep + 100, 4):
+                _, low, froze = world.advance(idx, t, 24.0, 0.6 * world.cap)
+                if froze is None and low >= world.min_soc * world.cap:
+                    ok = True
+                    break
+            host_cache[key] = ok
+        return host_cache[key]
+
     # --- screen the year with the shortest route ---
-    frozen, deepest = [], []
+    frozen, deepest, others = [], [], []
     lit_share = (year["sun"] >= 50).reshape(n_year, -1).mean(axis=1)
     for dep in range(LEAD_H, n_year - WINDOW_H + LEAD_H, DEPART_EVERY_H):
         for a, b, plan in pairs:
-            if world.sun[dep][world.idx(*a)] < 80:
+            if world.sun[dep][world.idx(*a)] < 80 or not can_host(dep, b):
                 continue
             r = simulate(world, plan, dep, log=False)
             item = (dep, a, b, r["min_battery_pct"], r["duration_h"], float(lit_share[dep:dep + 72].mean()))
@@ -120,6 +138,8 @@ def search_site(site_id, rover, log=print):
                 frozen.append(item)
             elif r["reserve_breached"]:
                 deepest.append(item)
+            else:
+                others.append(item)
     log(f"{site_id}: shortest route freezes in {len(frozen)} cases, breaches the reserve in {len(deepest)} more "
         f"({time.time() - t_begin:.0f} s)")
 
@@ -168,11 +188,13 @@ def search_site(site_id, rover, log=print):
     if best is None:
         best = evaluate(shortlist(deepest, key=lambda it: it[3]), False)
     if best is None:
+        best = evaluate(shortlist(others, key=lambda it: it[3]), False)
+    if best is None:
         log(f"{site_id}: no scenario found")
         return None
     best["note"] = ("Shortest route freezes; Sunchaser survives." if best["shortest_freezes"] else
-                    "The shortest route never freezes on a rescuable trip at this site in 2027; this is the trip "
-                    "where it cuts deepest into the battery reserve.")
+                    "No trip was found at this site in 2027 where the shortest route freezes and the target can host "
+                    "a parked rover; this is the trip where the shortest route cuts deepest into its battery.")
     s = best["search"]
     log(f"{site_id}: window {best['window_start']}  {best['start']} -> {best['target']}  "
         f"shortest p_survive {s['shortest_survival_probability']:.2f} | sunchaser {s['sunchaser_duration_h']:.1f} h, "
@@ -196,6 +218,10 @@ def main():
             print(f"{sid}: no year cache (run data/build_grid.py --year)")
             continue
         found = search_site(sid, rover, log=lambda m: print(m, flush=True))
+        if found is None:
+            # Steep sites have few long drivable trips: try shorter ones before giving up.
+            print(f"{sid}: retrying with trips of at least 2.5 km", flush=True)
+            found = search_site(sid, rover, log=lambda m: print(m, flush=True), min_separation_m=2500.0)
         if found:
             # One file per site, so several searches can run side by side.
             (CACHE / f"scenario_{sid}.json").write_text(json.dumps(found))

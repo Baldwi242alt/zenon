@@ -1,0 +1,200 @@
+{
+ "cabeus_b_peak": {
+  "window_start": "2027-11-09T00:00Z",
+  "depart_step": 24,
+  "start": {
+   "row": 5,
+   "col": 32
+  },
+  "target": {
+   "row": 53,
+   "col": 27
+  },
+  "shortest_freezes": false,
+  "search": {
+   "sunchaser_duration_h": 24.55,
+   "sunchaser_min_battery_pct": 49.4,
+   "sunchaser_survival_probability": 0.94,
+   "shortest_survival_probability": 0.03,
+   "waits": 1,
+   "score": 0.886
+  },
+  "note": "The shortest route never freezes on a rescuable trip at this site in 2027; this is the trip where it cuts deepest into the battery reserve."
+ },
+ "haworth": {
+  "window_start": "2027-12-16T12:00Z",
+  "depart_step": 24,
+  "start": {
+   "row": 57,
+   "col": 35
+  },
+  "target": {
+   "row": 5,
+   "col": 45
+  },
+  "shortest_freezes": true,
+  "search": {
+   "sunchaser_duration_h": 22.46,
+   "sunchaser_min_battery_pct": 58.2,
+   "sunchaser_survival_probability": 1.0,
+   "shortest_survival_probability": 0.315,
+   "waits": 0,
+   "score": 0.618
+  },
+  "note": "Shortest route freezes; Sunchaser survives."
+ },
+ "malapert_massif": {
+  "window_start": "2027-04-25T00:00Z",
+  "depart_step": 24,
+  "start": {
+   "row": 18,
+   "col": 5
+  },
+  "target": {
+   "row": 32,
+   "col": 58
+  },
+  "shortest_freezes": false,
+  "search": {
+   "sunchaser_duration_h": 23.52,
+   "sunchaser_min_battery_pct": 60.3,
+   "sunchaser_survival_probability": 0.81,
+   "shortest_survival_probability": 0.745,
+   "waits": 0,
+   "score": -0.006
+  },
+  "note": "No trip was found at this site in 2027 where the shortest route freezes and the target can host a parked rover; this is the trip where the shortest route cuts deepest into its battery."
+ },
+ "mons_mouton_plateau": {
+  "window_start": "2027-01-16T12:00Z",
+  "depart_step": 24,
+  "start": {
+   "row": 5,
+   "col": 18
+  },
+  "target": {
+   "row": 58,
+   "col": 5
+  },
+  "shortest_freezes": true,
+  "search": {
+   "sunchaser_duration_h": 24.35,
+   "sunchaser_min_battery_pct": 39.1,
+   "sunchaser_survival_probability": 1.0,
+   "shortest_survival_probability": 0.01,
+   "waits": 0,
+   "score": 0.917
+  },
+  "note": "Shortest route freezes; Sunchaser survives."
+ },
+ "mons_mouton": {
+  "window_start": "2027-01-01T12:00Z",
+  "depart_step": 24,
+  "start": {
+   "row": 46,
+   "col": 58
+  },
+  "target": {
+   "row": 18,
+   "col": 18
+  },
+  "shortest_freezes": true,
+  "search": {
+   "sunchaser_duration_h": 20.64,
+   "sunchaser_min_battery_pct": 46.9,
+   "sunchaser_survival_probability": 0.99,
+   "shortest_survival_probability": 0.02,
+   "waits": 0,
+   "score": 0.908
+  },
+  "note": "Shortest route freezes; Sunchaser survives."
+ },
+ "nobile_rim_1": {
+  "window_start": "2027-08-21T00:00Z",
+  "depart_step": 24,
+  "start": {
+   "row": 58,
+   "col": 23
+  },
+  "target": {
+   "row": 18,
+   "col": 45
+  },
+  "shortest_freezes": true,
+  "search": {
+   "sunchaser_duration_h": 19.65,
+   "sunchaser_min_battery_pct": 69.9,
+   "sunchaser_survival_probability": 1.0,
+   "shortest_survival_probability": 0.065,
+   "waits": 0,
+   "score": 0.876
+  },
+  "note": "Shortest route freezes; Sunchaser survives."
+ },
+ "nobile_rim_2": {
+  "window_start": "2027-12-01T12:00Z",
+  "depart_step": 24,
+  "start": {
+   "row": 58,
+   "col": 18
+  },
+  "target": {
+   "row": 5,
+   "col": 5
+  },
+  "shortest_freezes": true,
+  "search": {
+   "sunchaser_duration_h": 26.12,
+   "sunchaser_min_battery_pct": 59.0,
+   "sunchaser_survival_probability": 0.955,
+   "shortest_survival_probability": 0.0,
+   "waits": 1,
+   "score": 0.927
+  },
+  "note": "Shortest route freezes; Sunchaser survives."
+ },
+ "de_gerlache_rim_2": {
+  "window_start": "2027-12-07T12:00Z",
+  "depart_step": 24,
+  "start": {
+   "row": 32,
+   "col": 5
+  },
+  "target": {
+   "row": 45,
+   "col": 58
+  },
+  "shortest_freezes": true,
+  "search": {
+   "sunchaser_duration_h": 23.35,
+   "sunchaser_min_battery_pct": 45.2,
+   "sunchaser_survival_probability": 1.0,
+   "shortest_survival_probability": 0.0,
+   "waits": 0,
+   "score": 0.93
+  },
+  "note": "Shortest route freezes; Sunchaser survives."
+ },
+ "slater_plain": {
+  "window_start": "2027-10-30T00:00Z",
+  "depart_step": 24,
+  "start": {
+   "row": 18,
+   "col": 32
+  },
+  "target": {
+   "row": 58,
+   "col": 5
+  },
+  "shortest_freezes": true,
+  "search": {
+   "sunchaser_duration_h": 20.47,
+   "sunchaser_min_battery_pct": 51.0,
+   "sunchaser_survival_probability": 1.0,
+   "shortest_survival_probability": 0.115,
+   "waits": 0,
+   "score": 0.824
+  },
+  "note": "Shortest route freezes; Sunchaser survives."
+ }
+}

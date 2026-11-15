@@ -45,6 +45,7 @@ is 8-connected; the rover starts with a full battery.
 """
 
 import heapq
+import time
 
 EPS_T = 1e-9
 EPS_E = 1e-6
@@ -81,7 +82,7 @@ def change_soon_table(world, horizon_h=48, min_change_pct=10):
 
 def plan_route(world, start, target, depart_step, reserve_frac=None, start_energy=None,
                start_t=0.0, wait_steps=(1.0, 0.5), panel_scale=1.0, max_labels=1_500_000,
-               change_soon=None, dominance=True, settle_h=24.0):
+               change_soon=None, dominance=True, settle_h=24.0, max_seconds=300.0):
     """Fastest route that never takes the battery below the reserve.
 
     world        World (grid + rover)
@@ -193,6 +194,7 @@ def plan_route(world, start, target, depart_step, reserve_frac=None, start_energ
 
     n_origin[0] = 0
     goal, goal_t = -1, 0.0
+    deadline = time.time() + max_seconds          # hopeless searches spend their time rejecting labels
 
     def finish(nid):
         plan = []
@@ -220,7 +222,7 @@ def plan_route(world, start, target, depart_step, reserve_frac=None, start_energ
                 goal, goal_t = nid, t
             continue
         stats["expanded"] += 1
-        if stats["labels"] > max_labels:
+        if stats["labels"] > max_labels or (stats["expanded"] % 2000 == 0 and time.time() > deadline):
             if goal >= 0:
                 return finish(goal)
             stats["reason"] = "search limit reached"
