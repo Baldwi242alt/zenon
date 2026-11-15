@@ -1,0 +1,101 @@
+{
+ "cabeus_b_peak": {
+  "north_rc": [
+   -0.380021,
+   -0.924978
+  ],
+  "east_rc": [
+   -0.92493,
+   0.380137
+  ],
+  "source": "LRO LOLA LDEM_80S_20M, high-pass relief"
+ },
+ "haworth": {
+  "north_rc": [
+   -0.911733,
+   -0.410783
+  ],
+  "east_rc": [
+   -0.410533,
+   0.911846
+  ],
+  "source": "LRO LOLA LDEM_80S_20M, high-pass relief"
+ },
+ "malapert_massif": {
+  "north_rc": [
+   -0.998364,
+   -0.057181
+  ],
+  "east_rc": [
+   -0.056977,
+   0.998375
+  ],
+  "source": "LRO LOLA LDEM_80S_20M, high-pass relief"
+ },
+ "mons_mouton_plateau": {
+  "north_rc": [
+   -0.802068,
+   0.597233
+  ],
+  "east_rc": [
+   0.597349,
+   0.801982
+  ],
+  "source": "LRO LOLA LDEM_80S_20M, high-pass relief"
+ },
+ "mons_mouton": {
+  "north_rc": [
+   -0.869934,
+   0.493168
+  ],
+  "east_rc": [
+   0.493327,
+   0.869844
+  ],
+  "source": "LRO LOLA LDEM_80S_20M, high-pass relief"
+ },
+ "nobile_rim_1": {
+  "north_rc": [
+   -0.792747,
+   0.60955
+  ],
+  "east_rc": [
+   0.609697,
+   0.792634
+  ],
+  "source": "LRO LOLA LDEM_80S_20M, high-pass relief"
+ },
+ "nobile_rim_2": {
+  "north_rc": [
+   -0.514185,
+   0.857679
+  ],
+  "east_rc": [
+   0.857746,
+   0.514074
+  ],
+  "source": "LRO LOLA LDEM_80S_20M, high-pass relief"
+ },
+ "de_gerlache_rim_2": {
+  "north_rc": [
+   -0.376887,
+   -0.926259
+  ],
+  "east_rc": [
+   -0.926059,
+   0.37738
+  ],
+  "source": "LRO LOLA LDEM_80S_20M, high-pass relief"
+ },
+ "slater_plain": {
+  "north_rc": [
+   0.686377,
+   0.727246
+  ],
+  "east_rc": [
+   0.727045,
+   -0.68659
+  ],
+  "source": "LRO LOLA LDEM_80S_20M, high-pass relief"
+ }
+}

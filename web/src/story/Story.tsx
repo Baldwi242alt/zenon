@@ -344,7 +344,7 @@ const TOOLS: [string, string, string][] = [
   ['/windows', 'Landing windows', 'Every landing time in 2027, and what a slip costs'],
   ['/rover', 'Rover operations', 'Shortest path versus Sunchaser, with survival odds'],
   ['/business', 'Business case', 'Your budget, turned into cost per usable day'],
-  ['/copilot', 'Mission copilot', 'Ask in plain English; answers cite the computed numbers'],
+  ['/copilot', 'Ask Gemini', 'Google Gemini answers in plain English, citing only the computed numbers'],
 ]
 
 function Tools() {

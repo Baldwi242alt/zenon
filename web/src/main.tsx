@@ -6,6 +6,7 @@ import { StoreProvider } from './store'
 import './theme.css'
 import './archive.css'
 import './leads.css'
+import './chat.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

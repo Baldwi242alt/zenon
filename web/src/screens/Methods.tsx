@@ -17,6 +17,7 @@ export default function Methods() {
           <li><a href="https://imbrium.mit.edu/DATA/LOLA_GDR/POLAR/IMG/">LRO LOLA polar elevation models</a> (20 m, 30 m and 120 m): terrain heights, slopes and horizons.</li>
           <li><a href="https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/">NASA's nine Artemis III candidate regions</a> (Oct 2024), with 77 published landing points inside them (JGR Planets 2025, doi:10.1029/2025JE009434). We keep the best-lit point per region.</li>
           <li><a href="https://pgda.gsfc.nasa.gov/products/69">LOLA illumination maps</a> (NASA Goddard) and the IM-1 and IM-2 landing records, for validation.</li>
+          <li><a href="https://trek.nasa.gov/moon/">NASA Moon Trek</a>: the LROC NAC south-pole mosaic (LRO_NAC_AvgMosaic_SPole855_1mp) draped on the 3D terrain and the rover shadow map, and the LROC WAC global mosaic on the globe. Sites beyond the NAC mosaic (about 85.5° S) are filled with LOLA 20 m relief.</li>
           <li>Hayne et al. 2017 (JGR Planets 122, 2371) regolith properties, fitted to LRO Diviner, for surface temperature.</li>
         </ul>
       </Panel>
@@ -74,7 +75,7 @@ export default function Methods() {
 
       <Panel title="How we used AI">
         <p>We used AI coding assistants to help write, test and document the code, from our own design, physics references and data contract; results
-          were checked against hand-worked cases, NASA's maps and real landings. The copilot may use an AI model to choose which data tool to call and
+          were checked against hand-worked cases, NASA's maps and real landings. The copilot uses Google Gemini (free tier) to choose which data tool to call and
           to phrase the answer, but any answer containing a number that is not in the computed data is rejected, and a rule-based fact finder with no
           AI answers when no model is available.</p>
       </Panel>

@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import regolithUrl from '../assets/viz/regolith.jpg'
-import type { Grid, Route, RouteFile } from '../types'
+import reliefMeta from '../assets/relief/meta.json'
+import { useJson } from '../data'
+import type { Grid, Route, RouteFile, Timeline } from '../types'
 import { visibleLoop } from './useScroll'
 
 // The real Slater Plain operations area as a 3D diorama: LRO LOLA heights (exaggerated 3x),
@@ -11,9 +12,16 @@ import { visibleLoop } from './useScroll'
 //
 // The 64 x 64 grid (80 m cells) is upsampled 3x with bilinear interpolation and lightly smoothed
 // so the surface reads as terrain rather than blocks; sunlight is interpolated the same way, so
-// shadow edges are soft. A tiling regolith texture adds surface grain (illustrative detail only).
+// shadow edges are soft. The surface is draped with the real LROC NAC photo of the area (NASA Moon Trek),
+// with LOLA 20 m relief as bump detail, lit from the real Sun direction (JPL Horizons).
 const EXAG = 3
 const UP = 3
+// Real ground: LROC NAC orbital photo of each grid area (data/make_ground.py) and LOLA 20 m relief (data/make_relief.py).
+const urls = (g: Record<string, string>) => Object.fromEntries(Object.entries(g).map(([k, v]) => [k.split('/').pop()!.split('.')[0], v]))
+export const GROUND = urls(import.meta.glob('../assets/ground/*.jpg', { eager: true, query: '?url', import: 'default' }) as Record<string, string>)
+const RELIEF = urls(import.meta.glob('../assets/relief/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>)
+const META = reliefMeta as unknown as Record<string, { north_rc: [number, number]; east_rc: [number, number] }>
+const parseT = (s: string) => Date.parse(s.length === 17 ? s.replace('Z', ':00Z') : s)
 
 function posAt(route: Route, t: number) {
   const st = route.steps
@@ -70,6 +78,16 @@ export function TerrainScene({ grid, rf, t }: { grid: Grid; rf: RouteFile; t: nu
   const mount = useRef<HTMLDivElement>(null)
   const tRef = useRef(t)
   tRef.current = t
+  // The real Sun (JPL Horizons, from the site's timeline) for each hour of the grid window.
+  const tl = useJson<Timeline>(`timeline_${grid.site}.json`)
+  const sunRef = useRef<{ az: number; el: number }[] | null>(null)
+  if (tl.state === 'ready' && !sunRef.current) {
+    const off = Math.round((parseT(grid.window_start) - parseT(tl.data.start)) / 3.6e6)
+    sunRef.current = Array.from({ length: grid.n_steps }, (_, s) => {
+      const r = tl.data.rows[Math.min(tl.data.rows.length - 1, Math.max(0, off + s))]
+      return { az: r.sun_az_deg, el: r.sun_elev_deg }
+    })
+  }
 
   useEffect(() => {
     const el = mount.current!
@@ -105,15 +123,13 @@ export function TerrainScene({ grid, rf, t }: { grid: Grid; rf: RouteFile; t: nu
     const pos = geo.attributes.position as THREE.BufferAttribute
     for (let k = 0; k < M * M; k++) pos.setY(k, hgt[k])
     geo.computeVertexNormals()
-    const uv = geo.attributes.uv as THREE.BufferAttribute   // repeat the regolith grain across the area
-    for (let k = 0; k < uv.count; k++) uv.setXY(k, uv.getX(k) * 7, uv.getY(k) * 7)
     const colors = new Float32Array(M * M * 3)
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3))
-    const grain = new THREE.TextureLoader().load(regolithUrl)
-    grain.wrapS = grain.wrapT = THREE.RepeatWrapping
-    grain.colorSpace = THREE.SRGBColorSpace
-    grain.anisotropy = 8
-    const terrain = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, map: grain, bumpMap: grain, bumpScale: 0.6, roughness: 1, metalness: 0 }))
+    const loader = new THREE.TextureLoader()
+    const photo = GROUND[grid.site] ? loader.load(GROUND[grid.site]) : null
+    if (photo) { photo.colorSpace = THREE.SRGBColorSpace; photo.anisotropy = 8 }
+    const relief = RELIEF[grid.site] ? loader.load(RELIEF[grid.site]) : null
+    const terrain = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, map: photo, bumpMap: relief, bumpScale: 2.2, roughness: 1, metalness: 0 }))
     terrain.receiveShadow = true
     scene.add(terrain)
     const half = (N - 1) / 2
@@ -206,7 +222,7 @@ export function TerrainScene({ grid, rf, t }: { grid: Grid; rf: RouteFile; t: nu
     window.addEventListener('resize', resize)
 
     // Computed sunlight -> colour: shadow is a cold blue-black, light is warm regolith.
-    const lit = new THREE.Color(0xe9dcc2), dark = new THREE.Color(0x0b1220), steep = new THREE.Color(0x7a3b30), tmp = new THREE.Color()
+    const lit = new THREE.Color(photo ? 0xfff4e2 : 0xe9dcc2), dark = new THREE.Color(photo ? 0x1c2738 : 0x0b1220), steep = new THREE.Color(0x7a3b30), tmp = new THREE.Color()
     let lastStep = -1
     const frame = () => {
       const time = tRef.current
@@ -224,8 +240,19 @@ export function TerrainScene({ grid, rf, t }: { grid: Grid; rf: RouteFile; t: nu
         geo.attributes.color.needsUpdate = true
         lastStep = step
       }
-      const a = time * 0.0089 * Math.PI * 2 + 2.2      // low Sun circling, about half a degree per hour
-      sun.position.set(Math.cos(a) * 120, 20, Math.sin(a) * 120)
+      const real = sunRef.current?.[step], o = META[grid.site]
+      if (real && o) {
+        // Azimuth (from local north through east) -> direction on the grid; x = column, z = row.
+        const A = (real.az * Math.PI) / 180
+        const dr = o.north_rc[0] * Math.cos(A) + o.east_rc[0] * Math.sin(A)
+        const dc = o.north_rc[1] * Math.cos(A) + o.east_rc[1] * Math.sin(A)
+        const h = Math.max(2, Math.tan((Math.max(real.el, 0.2) * Math.PI) / 180) * 120 * EXAG)
+        sun.position.set(dc * 120, h, dr * 120)
+        sun.intensity = real.el > -0.3 ? 2.6 : 0.6
+      } else {
+        const a = time * 0.0089 * Math.PI * 2 + 2.2
+        sun.position.set(Math.cos(a) * 120, 20, Math.sin(a) * 120)
+      }
       const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 400)
       rings.forEach(r => ((r.material as THREE.MeshBasicMaterial).opacity = 0.55 + 0.4 * pulse))
       for (const r of rovers) {

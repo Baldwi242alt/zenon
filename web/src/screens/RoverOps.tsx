@@ -5,6 +5,9 @@ import { useStore } from '../store'
 import type { Grid, Route, RouteFile, Site } from '../types'
 
 const TerrainScene = lazy(() => import('../story/TerrainScene').then(m => ({ default: m.TerrainScene })))
+// The real LROC NAC photo of each grid area (data/make_ground.py), drawn under the 2D shadow map.
+const GROUND_URLS = Object.fromEntries(Object.entries(import.meta.glob('../assets/ground/*.jpg', { eager: true, query: '?url', import: 'default' }) as Record<string, string>)
+  .map(([k, v]) => [k.split('/').pop()!.split('.')[0], v]))
 
 const COLORS: Record<string, string> = { shortest: '#f0605d', sunchaser_fast: '#f2a541', sunchaser_safe: '#4cc38a' }
 
@@ -91,6 +94,13 @@ function Ops({ grid, rf, site }: { grid: Grid; rf: RouteFile; site: Site }) {
   const step = Math.min(grid.n_steps - 1, Math.floor(rf.depart_step + t))
   const [view, setView] = useState<'3d' | 'map'>('3d')
   const [hover, setHover] = useState<{ r: number; c: number } | null>(null)
+  const [ground, setGround] = useState<HTMLImageElement | null>(null)
+  useEffect(() => {
+    setGround(null)
+    const url = GROUND_URLS[grid.site]
+    if (!url) return
+    const im = new Image(); im.onload = () => setGround(im); im.src = url
+  }, [grid.site])
 
   // 2D map: the sunlight field is painted at cell resolution, then scaled up with smoothing so
   // shadows have soft, interpolated edges instead of 80 m blocks. Routes glow; the part already
@@ -107,14 +117,24 @@ function Ops({ grid, rf, site }: { grid: Grid; rf: RouteFile; site: Site }) {
     const sun = grid.sun_pct[step]
     for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
       const lit = sun[r][c] / 100, sh = relief[r][c], o = (r * N + c) * 4
-      img.data[o] = lit * (205 + sh * 90) + (1 - lit) * (12 + sh * 30)
-      img.data[o + 1] = lit * (192 + sh * 85) + (1 - lit) * (18 + sh * 34)
-      img.data[o + 2] = lit * (165 + sh * 70) + (1 - lit) * (32 + sh * 40)
+      if (ground) {   // a light filter laid over the photo: clear where sunlit, deep blue in shadow
+        img.data[o] = 34 + lit * 221; img.data[o + 1] = 46 + lit * 204; img.data[o + 2] = 78 + lit * 162
+      } else {
+        img.data[o] = lit * (205 + sh * 90) + (1 - lit) * (12 + sh * 30)
+        img.data[o + 1] = lit * (192 + sh * 85) + (1 - lit) * (18 + sh * 34)
+        img.data[o + 2] = lit * (165 + sh * 70) + (1 - lit) * (32 + sh * 40)
+      }
       img.data[o + 3] = 255
     }
     fg.putImageData(img, 0, 0)
     g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'
-    g.drawImage(field, 0, 0, S, S)
+    if (ground) {
+      g.fillStyle = '#000'; g.fillRect(0, 0, S, S)
+      g.drawImage(ground, k / 2, k / 2, S - k, S - k)     // the photo spans cell centre to cell centre
+      g.globalCompositeOperation = 'multiply'
+      g.drawImage(field, 0, 0, S, S)
+      g.globalCompositeOperation = 'source-over'
+    } else g.drawImage(field, 0, 0, S, S)
     // steep ground: fine red hatching
     g.strokeStyle = 'rgba(240,96,93,0.28)'; g.lineWidth = 1
     for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (steep[r][c]) {
@@ -151,7 +171,7 @@ function Ops({ grid, rf, site }: { grid: Grid; rf: RouteFile; site: Site }) {
       g.fillStyle = col; g.strokeStyle = '#000'; g.lineWidth = 2.5; g.beginPath(); g.arc(x, y, 9, 0, 7); g.fill(); g.stroke()
       if (p.frozen) { g.font = '600 22px "STIX Two Text", serif'; g.fillStyle = '#8fd0ff'; g.fillText('FROZEN', x + 18, y + 7) }
     }
-  }, [view, grid, rf, step, t, steep, relief, N])
+  }, [view, grid, rf, step, t, steep, relief, N, ground])
 
   const hoverCell = hover && {
     elev: grid.elevation_m[hover.r][hover.c], slope: grid.slope_deg[hover.r][hover.c], sun: grid.sun_pct[step][hover.r][hover.c],
@@ -196,7 +216,7 @@ function Ops({ grid, rf, site }: { grid: Grid; rf: RouteFile; site: Site }) {
             <input type="range" min={0} max={end} step={0.05} value={t} onChange={e => { setPlaying(false); setT(+e.target.value) }} aria-label="Mission time" />
             <span className="mono">T+{t.toFixed(1)} h</span>
           </div>
-          <p className="note mono">{fmtTime(now.toISOString().slice(0, 16) + 'Z')} · {grid.rows * grid.cell_size_m / 1000} km × {grid.cols * grid.cell_size_m / 1000} km, {grid.cell_size_m} m cells · {view === '3d' ? 'real LOLA terrain, heights ×3, drag to orbit' : 'bright = sunlit, dark = shadow, red hatching = too steep to drive, hover for details'}</p>
+          <p className="note mono">{fmtTime(now.toISOString().slice(0, 16) + 'Z')} · {grid.rows * grid.cell_size_m / 1000} km × {grid.cols * grid.cell_size_m / 1000} km, {grid.cell_size_m} m cells · {view === '3d' ? 'real LOLA terrain, heights ×3, drag to orbit' : 'LROC NAC photo (NASA) with computed shadows: blue = shadow, red hatching = too steep, hover for details'}</p>
         </div>
         <div>
           {rf.routes.map(r => {

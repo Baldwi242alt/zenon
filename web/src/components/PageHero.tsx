@@ -18,7 +18,7 @@ const HEROES: Record<string, Hero> = {
   '/windows': { eyebrow: 'Landing windows · every six hours of 2027', title: 'WINDOWS', epithet: 'When the light lines up', img: polarDawn, video: shadowLoop, credit: 'Illustrative · Higgsfield visualization' },
   '/rover': { eyebrow: 'Rover operations · space-time A* with Monte Carlo survival', title: 'ROVER', epithet: 'Drive where the Sun will be', img: roverRidge, video: roverLoop, credit: 'Illustrative · Higgsfield visualization' },
   '/business': { eyebrow: 'Business case · cost per usable day', title: 'BUSINESS', epithet: 'What a day on the Moon is worth', img: im2Launch, credit: 'CLPS IM-2 liftoff, 26 Feb 2025 · NASA', pos: 'center 25%' },
-  '/copilot': { eyebrow: 'Mission copilot · answers only from computed data', title: 'COPILOT', epithet: 'Ask the mission in plain English', img: goldstone, credit: 'Goldstone 70 m antenna, Deep Space Network · NASA/JPL-Caltech', pos: 'center 35%' },
+  '/copilot': { eyebrow: 'Mission copilot · powered by Google Gemini · answers only from computed data', title: 'ASK GEMINI', epithet: 'Ask the mission in plain English', img: goldstone, credit: 'Goldstone 70 m antenna, Deep Space Network · NASA/JPL-Caltech', pos: 'center 35%' },
   '/methods': { eyebrow: 'Methods, validation and limits', title: 'METHODS', epithet: 'How every number is made', img: lolaRelief, credit: 'Shaded relief from LRO LOLA elevation · NASA' },
 }
 

@@ -173,12 +173,12 @@ function BusinessLead({ names }: N) {
 }
 
 function CopilotLead() {
-  const steps = [['You ask', 'A question in plain English, about any site, month or route.'], ['It looks up', 'A model picks which of eight data tools to call; the tools read Sunchaser\'s computed files.'],
+  const steps = [['You ask', 'A question in plain English, about any site, month or route.'], ['It looks up', 'Google Gemini picks which of eight data tools to call; the tools read Sunchaser\'s computed files.'],
     ['It checks', 'Every number in the answer must appear in the data, or the answer is rejected. The facts used are listed.']]
   return (
-    <Lead eyebrow="How the copilot answers" visual={
+    <Lead eyebrow="How Gemini answers" visual={
       <ol className="lead-steps">{steps.map(([k, v], i) => <li key={k}><span>{String(i + 1).padStart(2, '0')}</span><b>{k}</b><p>{v}</p></li>)}</ol>}>
-      A mission assistant that <em>cannot invent numbers</em>: it only answers from what Sunchaser computed.
+      Google Gemini as a mission assistant that <em>cannot invent numbers</em>: it only answers from what Sunchaser computed.
     </Lead>
   )
 }

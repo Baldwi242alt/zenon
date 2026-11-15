@@ -62,4 +62,4 @@ export interface Criteria {
 }
 
 export interface Fact { label: string; value: string }
-export interface CopilotReply { answer: string; facts_used: Fact[] }
+export interface CopilotReply { answer: string; facts_used: Fact[]; kind?: "data" | "general" | "offline" }

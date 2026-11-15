@@ -1,0 +1,47 @@
+{
+ "cabeus_b_peak": {
+  "nac_coverage": 0.0,
+  "photo": null,
+  "fill": "LRO LOLA LDEM_80S_20M relief"
+ },
+ "haworth": {
+  "nac_coverage": 1.0,
+  "photo": "LRO_NAC_AvgMosaic_SPole855_1mp (LROC NAC, 4.2 m/px)",
+  "fill": null
+ },
+ "malapert_massif": {
+  "nac_coverage": 1.0,
+  "photo": "LRO_NAC_AvgMosaic_SPole855_1mp (LROC NAC, 4.2 m/px)",
+  "fill": null
+ },
+ "mons_mouton_plateau": {
+  "nac_coverage": 0.0,
+  "photo": null,
+  "fill": "LRO LOLA LDEM_80S_20M relief"
+ },
+ "mons_mouton": {
+  "nac_coverage": 0.366,
+  "photo": "LRO_NAC_AvgMosaic_SPole855_1mp (LROC NAC, 4.2 m/px)",
+  "fill": "LRO LOLA LDEM_80S_20M relief"
+ },
+ "nobile_rim_1": {
+  "nac_coverage": 0.813,
+  "photo": "LRO_NAC_AvgMosaic_SPole855_1mp (LROC NAC, 4.2 m/px)",
+  "fill": "LRO LOLA LDEM_80S_20M relief"
+ },
+ "nobile_rim_2": {
+  "nac_coverage": 0.0,
+  "photo": null,
+  "fill": "LRO LOLA LDEM_80S_20M relief"
+ },
+ "de_gerlache_rim_2": {
+  "nac_coverage": 1.0,
+  "photo": "LRO_NAC_AvgMosaic_SPole855_1mp (LROC NAC, 4.2 m/px)",
+  "fill": null
+ },
+ "slater_plain": {
+  "nac_coverage": 1.0,
+  "photo": "LRO_NAC_AvgMosaic_SPole855_1mp (LROC NAC, 4.2 m/px)",
+  "fill": null
+ }
+}

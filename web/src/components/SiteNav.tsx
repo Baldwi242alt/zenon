@@ -16,12 +16,12 @@ export function SiteNav() {
       <Link to="/" className="ca-brand" aria-label="Sunchaser home"><span className="ca-brand-mark" aria-hidden="true" />SUNCHASER</Link>
       <nav aria-label="Main">
         {LINKS.map(l => <NavLink key={l.to} to={l.to}>{l.label}</NavLink>)}
-        <NavLink to="/copilot" className="ca-nav-cta">Ask the copilot</NavLink>
+        <NavLink to="/copilot" className="ca-nav-cta">Ask Gemini</NavLink>
       </nav>
       <nav className="ca-nav-mobile" aria-label="Main (mobile)">
         <NavLink to="/" end>Home</NavLink>
         {LINKS.map(l => <NavLink key={l.to} to={l.to}>{l.label}</NavLink>)}
-        <NavLink to="/copilot">Copilot</NavLink>
+        <NavLink to="/copilot">Ask Gemini</NavLink>
       </nav>
     </header>
   )

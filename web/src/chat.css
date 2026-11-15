@@ -1,0 +1,55 @@
+/* Ask Gemini: a messaging-style chat in the archive palette. */
+.gchat { max-width: 920px; margin: 0 auto 30px; border: 1px solid var(--line-c); background: linear-gradient(180deg, #0a0a0c, #050506); display: flex; flex-direction: column; height: min(78vh, 760px); }
+.gchat-head { display: flex; align-items: center; gap: 14px; padding: 16px 20px; border-bottom: 1px solid var(--line-soft); }
+.gchat-head b { display: block; font: 400 19px var(--serif); }
+.gchat-head small { font: 12px var(--type); color: var(--dim); letter-spacing: 0.06em; }
+.gchat-clear { margin-left: auto; background: none; border: 1px solid var(--line-c); color: var(--muted); font: 12.5px var(--type); padding: 7px 12px; cursor: pointer; }
+.gchat-clear:hover { color: var(--accent-pale); border-color: var(--accent); }
+
+/* Gemini-style four-point sparkle, in the Sun's amber and Earth's blue */
+.gmark { width: 26px; height: 26px; flex-shrink: 0; background: conic-gradient(from 200deg, #8db8ff, #f2a541, #ffd7a1, #8db8ff);
+  clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%); }
+.gmark.big { width: 54px; height: 54px; margin-bottom: 18px; animation: gm-breathe 3.5s ease-in-out infinite; }
+.gmark.spin { animation: gm-spin 1.4s linear infinite; }
+@keyframes gm-spin { to { transform: rotate(360deg); } }
+@keyframes gm-breathe { 50% { transform: scale(1.12) rotate(45deg); } }
+
+.gchat-log { flex: 1; overflow-y: auto; padding: 22px 20px; display: flex; flex-direction: column; gap: 16px; scroll-behavior: smooth; }
+.gchat-empty { margin: auto; text-align: center; max-width: 620px; display: flex; flex-direction: column; align-items: center; }
+.gchat-hello { font: 400 30px var(--serif); margin: 0; background: linear-gradient(90deg, #8db8ff, #ffd7a1); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.gchat-sub { color: var(--muted); margin: 10px 0 24px; line-height: 1.6; }
+.gchat-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.gchat-chips button { background: rgba(255, 255, 255, 0.03); border: 1px solid var(--line-c); color: var(--text); padding: 10px 14px; border-radius: 18px; font: 14px var(--ui); cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+.gchat-chips button:hover { border-color: var(--accent); background: rgba(242, 165, 65, 0.06); }
+
+.gmsg { display: flex; gap: 12px; max-width: 86%; animation: gm-in 0.35s var(--ease) both; }
+@keyframes gm-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.gmsg p { margin: 0; font: 15.5px/1.65 var(--ui); white-space: pre-wrap; }
+.gmsg.me { align-self: flex-end; }
+.gmsg.me p { background: linear-gradient(135deg, rgba(242, 165, 65, 0.22), rgba(242, 165, 65, 0.1)); border: 1px solid rgba(242, 165, 65, 0.35); padding: 11px 16px; border-radius: 18px 18px 4px 18px; color: #fff; }
+.gmsg.bot { align-self: flex-start; }
+.gmsg.bot .gmark { margin-top: 4px; }
+.gmsg.bot > div { color: #e8e4dc; }
+.gmsg.err p { color: #ffb0ae; }
+.gkind { display: inline-block; margin-top: 10px; font: 11.5px var(--type); letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 9px; border: 1px solid var(--line-c); color: var(--dim); border-radius: 12px; }
+.gkind.data { color: var(--both); border-color: rgba(95, 211, 155, 0.4); }
+.gkind.general { color: var(--earth); border-color: rgba(141, 184, 255, 0.35); }
+.gfacts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.gfacts span { font: 12.5px var(--ui); color: var(--muted); background: rgba(255, 255, 255, 0.03); border: 1px solid var(--line-soft); padding: 5px 10px; border-radius: 12px; }
+.gfacts b { color: var(--accent-pale); margin-left: 6px; font-weight: 500; }
+.gtyping { display: flex; gap: 5px; padding: 12px 4px; }
+.gtyping i { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); animation: gm-dot 1.2s infinite ease-in-out; }
+.gtyping i:nth-child(2) { animation-delay: 0.15s; } .gtyping i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes gm-dot { 0%, 80%, 100% { opacity: 0.25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-4px); } }
+
+.gchat-input { display: flex; gap: 10px; align-items: flex-end; margin: 0 16px; padding: 10px 10px 10px 18px; border: 1px solid var(--line-c); border-radius: 26px; background: #0d0d10; }
+.gchat-input:focus-within { border-color: rgba(242, 165, 65, 0.6); }
+.gchat-input textarea { flex: 1; resize: none; background: none; border: 0; outline: none; color: var(--text); font: 15.5px/1.5 var(--ui); max-height: 140px; padding: 6px 0; }
+.gchat-input button { width: 38px; height: 38px; border-radius: 50%; border: 0; background: var(--accent); color: #160d02; font-size: 18px; cursor: pointer; flex-shrink: 0; }
+.gchat-input button:disabled { background: #2a2a2e; color: #66625b; cursor: default; }
+.gchat-note { text-align: center; font: 12px var(--ui); color: var(--dim); margin: 10px 16px 14px; }
+@media (max-width: 600px) { .gmsg { max-width: 100%; } .gchat { height: 80vh; } }
+@media (prefers-reduced-motion: reduce) { .gmark.big, .gmark.spin, .gmsg, .gtyping i { animation: none; } }
+
+/* solid nav so scrolled content never shows through */
+.ca-nav { background: rgba(3, 3, 3, 0.96); }

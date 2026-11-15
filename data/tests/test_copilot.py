@@ -220,6 +220,36 @@ def test_busy_gemini_model_moves_to_the_next_one():
     assert calls == ["busy-model", "ok-model", "ok-model"]
 
 
+def gemini_says(*texts):
+    """A fake Gemini that answers directly, without calling any tool."""
+    return FakeGemini([SimpleNamespace(steps=[Step(type="model_output", text=t)], output_text=t) for t in texts])
+
+
+def test_general_question_is_answered_conversationally():
+    answer = "The Moon is about 384,400 km away, and at the south pole Earth hangs low on the horizon."
+    fake = gemini_says(answer)
+    status, body = copilot.handle(json.dumps({"question": "How far away is the Moon?"}).encode(),
+                                  ip="g5", engine="gemini", client=fake)
+    assert status == 200 and body["answer"] == answer and body["kind"] == "general" and body["facts_used"] == []
+
+
+def test_general_answer_may_not_invent_site_numbers():
+    name = copilot.site_name(copilot.site_ids()[0])
+    fake = gemini_says(f"{name} gets 99 usable days.", f"{name} gets 98 usable days.")
+    status, body = copilot.handle(json.dumps({"question": f"How good is {name}?"}).encode(),
+                                  ip="g6", engine="gemini", client=fake)
+    assert status == 200 and "99" not in body["answer"] and "98" not in body["answer"]
+
+
+def test_history_is_sent_for_follow_ups():
+    fake = gemini_says("Sure: in August the Sun is lower at that site.")
+    history = [{"role": "user", "text": "Tell me about Haworth"}, {"role": "assistant", "text": "Haworth is a crater rim."}]
+    copilot.handle(json.dumps({"question": "What about August?", "history": history}).encode(),
+                   ip="g7", engine="gemini", client=fake)
+    first = fake.calls[0]["input"][0]["content"][0]["text"]
+    assert "Tell me about Haworth" in first and "What about August?" in first
+
+
 # ---------- stage 15: live analysis and rover routes ----------
 
 def test_custom_mission_with_default_rules_matches_precomputed_windows():

@@ -54,6 +54,7 @@ GEMINI_MODELS = ([os.environ["GEMINI_MODEL"]] if os.environ.get("GEMINI_MODEL")
                  else ["gemini-3.5-flash-lite", "gemini-3.5-flash"])
 GEMINI_MODEL = GEMINI_MODELS[0]
 MAX_QUESTION_CHARS = 500
+MAX_HISTORY_TURNS = 8          # recent chat turns sent along for follow-up questions
 MAX_TOOL_ROUNDS = 6
 RATE_LIMIT_PER_MIN = 10
 GEMINI_CALL_TIMEOUT_S = 12   # one request to Google
@@ -393,15 +394,24 @@ def facts_in_answer(answer, facts):
 
 # ===================== shared prompt =====================
 
-SYSTEM = """You are Sunchaser's mission copilot for lunar south-pole landing planning.
-Answer ONLY from the results of your tools; they read Sunchaser's computed data (JPL Horizons
-ephemerides, LRO LOLA terrain, 9 NASA Artemis III candidate regions, year 2027, 10-day missions).
-Rules:
-- Call tools to get every number you use. Copy numbers exactly as the tools return them; do not
-  compute new numbers (no differences, ratios or percentages of your own).
-- If the data does not cover the question (other years, other sites, things not computed), say so.
-- Answer in 2-4 plain sentences. Mention site names, not ids. No markdown.
-- Write times like "19 Jun 2027, 18:00 UTC" and whole numbers without ".0".
+SYSTEM = """You are Sunchaser's mission copilot, powered by Google Gemini: a friendly, sharp lunar
+mission planner people chat with like a text conversation. Sunchaser plans landings at the Moon's south
+pole: 9 NASA Artemis III candidate regions, every hour of 2027, sunlight and Earth contact from JPL
+Horizons and LRO LOLA terrain, 10-day missions, rover routes with Monte Carlo survival.
+
+Answer every message. Two kinds of answer:
+1. Questions about Sunchaser's sites, landing dates, sunlight, Earth contact, darkness, launch slips,
+   costs or rover routes: call your tools and use only the numbers they return, copied exactly (no new
+   differences, ratios or percentages). If the data doesn't cover it (other years, other places), say so.
+2. Anything else (Moon science, the south pole, NASA and Artemis, other missions, spaceflight, how
+   things work, greetings, follow-ups, even off-topic chat): answer naturally from your own knowledge,
+   like a knowledgeable friend. Keep a lunar-mission flavour, and where it fits, connect back to the
+   south pole or offer a Sunchaser question to try. Never present general knowledge as Sunchaser data,
+   and never invent numbers about Sunchaser's 9 sites without a tool.
+
+Style: warm and direct, 1-4 short sentences, plain text, no markdown or lists. Use site names, not ids.
+Write times like "19 Jun 2027, 18:00 UTC" and whole numbers without ".0". Use the conversation so far
+to understand follow-ups ("what about August?", "and the rover?").
 Mission rules: a usable day has enough sunlight and Earth contact; a landing "survives" if no dark spell
 is longer than the survivable limit."""
 
@@ -428,7 +438,24 @@ def gemini_tools():
             for name, (_, desc, props) in TOOLS.items()]
 
 
-def answer_with_gemini(question, site, client, models=None):
+def format_history(history):
+    """Recent chat turns as plain text, so follow-up questions make sense."""
+    lines = []
+    for turn in (history or [])[-MAX_HISTORY_TURNS:]:
+        if isinstance(turn, dict) and isinstance(turn.get("text"), str) and turn["text"].strip():
+            who = "User" if turn.get("role") == "user" else "Copilot"
+            lines.append(f"{who}: {turn['text'].strip()[:MAX_QUESTION_CHARS]}")
+    return "\n".join(lines)
+
+
+def mentions_site_numbers(answer):
+    """True if a general (no-tool) answer quotes numbers next to one of our site names."""
+    names = [site_name(s).lower() for s in site_ids()]
+    low = answer.lower()
+    return any(n in low for n in names) and bool(re.search(r"\d", answer))
+
+
+def answer_with_gemini(question, site, client, models=None, history=None):
     """Gemini tool loop (Interactions API, stateless).
 
     The first request tries each model in order until one answers; the rest of
@@ -437,6 +464,9 @@ def answer_with_gemini(question, site, client, models=None):
     if the answer fails the numbers guard twice.
     """
     prompt = question if not site else f"{question}\n(The user is looking at site id '{site}'.)"
+    past = format_history(history)
+    if past:
+        prompt = f"Conversation so far:\n{past}\n\nNew message from the user: {prompt}"
     history = [{"type": "user_input", "content": [{"type": "text", "text": prompt}]}]
     evidence, facts = [question], []
     candidates = list(models or GEMINI_MODELS)
@@ -477,9 +507,19 @@ def answer_with_gemini(question, site, client, models=None):
                 facts.extend(f)
                 history.append({"type": "function_result", "name": call.name, "call_id": call.id,
                                 "result": [{"type": "text", "text": text}]})
+        if not facts:
+            # No tool was needed: a general or conversational answer from Gemini's own knowledge.
+            # Only push back if it quotes numbers about our sites without having looked them up.
+            if answer and not mentions_site_numbers(answer):
+                return {"answer": answer, "facts_used": [], "kind": "general"}
+            if answer and attempt == 1:
+                return None
+            history.append({"type": "user_input", "content": [{"type": "text", "text":
+                            "Use your tools for any number about Sunchaser's sites, then answer again."}]})
+            continue
         ok = _checked(answer, evidence, facts)
         if ok:
-            return ok
+            return {**ok, "kind": "data"}
         bad = ", ".join(unsupported_numbers(answer, evidence)) or "none"
         history.append({"type": "user_input",
                         "content": [{"type": "text", "text": GUARD_NUDGE.format(bad=bad)}]})
@@ -528,9 +568,19 @@ def answer_question(question, site=None, client=None):
                                 **({"is_error": True} if is_error else {})})
             messages.append({"role": "user", "content": results})
         answer = text_of(response)
+        if not facts:
+            # No tool was needed: a general or conversational answer from Gemini's own knowledge.
+            # Only push back if it quotes numbers about our sites without having looked them up.
+            if answer and not mentions_site_numbers(answer):
+                return {"answer": answer, "facts_used": [], "kind": "general"}
+            if answer and attempt == 1:
+                return None
+            history.append({"type": "user_input", "content": [{"type": "text", "text":
+                            "Use your tools for any number about Sunchaser's sites, then answer again."}]})
+            continue
         ok = _checked(answer, evidence, facts)
         if ok:
-            return ok
+            return {**ok, "kind": "data"}
         bad = ", ".join(unsupported_numbers(answer, evidence)) or "none"
         messages.append({"role": "user", "content": GUARD_NUDGE.format(bad=bad)})
     return {"answer": "I couldn't produce an answer I could verify against the data, so here are the "
@@ -702,8 +752,10 @@ def answer_without_ai(question, site=None):
     out = fact_finder(question, site)
     if out:
         return out
-    return {"answer": "I can answer questions about the 9 sites' landing dates, sunlight, Earth contact and the "
-                      "cost of a launch slip in 2027. Try: " + " / ".join(EXAMPLES), "facts_used": []}
+    return {"answer": "I couldn't reach Gemini just now, so I'm answering from Sunchaser's data only, and that one "
+                      "isn't in it. I can tell you about the 9 sites' landing dates, sunlight, Earth contact, rover "
+                      "routes and the cost of a launch slip in 2027. Try: " + " / ".join(EXAMPLES),
+            "facts_used": [], "kind": "offline"}
 
 
 # ===================== HTTP handler (Vercel) =====================
@@ -729,11 +781,11 @@ def make_engine():
     return None, None
 
 
-def respond(question, site, engine, client):
+def respond(question, site, engine, client, history=None):
     """Try the AI engine, fall back to the fact finder. Always returns a response dict."""
     if engine == "gemini":
         try:
-            out = answer_with_gemini(question, site, client)
+            out = answer_with_gemini(question, site, client, history=history)
             if out:
                 return out
         except Exception:  # EngineUnavailable or anything unexpected: never break the chat
@@ -757,6 +809,7 @@ def handle(body, ip="local", engine=None, client=None):
         return 400, {"error": "body must be JSON"}
     q = req.get("question")
     site = req.get("site")
+    history = req.get("history") if isinstance(req.get("history"), list) else None
     if not isinstance(q, str) or not q.strip() or len(q) > MAX_QUESTION_CHARS:
         return 400, {"error": f"'question' must be a non-empty string of at most {MAX_QUESTION_CHARS} characters"}
     if site is not None and site not in site_ids():
@@ -765,7 +818,7 @@ def handle(body, ip="local", engine=None, client=None):
         return 429, {"error": "too many questions; try again in a minute"}
     if engine is None and client is None:
         engine, client = make_engine()
-    return 200, respond(q.strip(), site, engine, client)
+    return 200, respond(q.strip(), site, engine, client, history)
 
 
 class handler(BaseHTTPRequestHandler):
