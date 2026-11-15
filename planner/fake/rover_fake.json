@@ -1,0 +1,36 @@
+{
+  "name": "Sunchaser reference rover",
+  "mass_kg": 120,
+  "panel": {
+    "area_m2": 0.6,
+    "efficiency": 0.3,
+    "mount": "vertical_sun_tracking"
+  },
+  "battery": {
+    "capacity_wh": 2000,
+    "min_soc": 0.15,
+    "charge_efficiency": 0.95
+  },
+  "power_w": {
+    "avionics": 30,
+    "comms_active": 25,
+    "heater_dark": 60,
+    "heater_lit": 0
+  },
+  "drive": {
+    "speed_m_per_h": 200,
+    "base_drive_w": 40,
+    "rolling_resistance": 0.15,
+    "drivetrain_efficiency": 0.5,
+    "max_slope_deg": 15
+  },
+  "comms": {
+    "dte_rate_kbps": 100
+  },
+  "uncertainty_pct": {
+    "battery_capacity": 10,
+    "panel_output": 10,
+    "power_draw": 10
+  },
+  "sources": "web/SOURCES.md"
+}
