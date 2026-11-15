@@ -1,0 +1,29 @@
+[
+  {
+    "id": "site_a",
+    "name": "FAKE Ridge A",
+    "lat": -89.45,
+    "lon": 137.3,
+    "elevation_m": 1850,
+    "source": "FAKE DATA for development, not NASA data",
+    "notes": "Fake ridge, mostly lit"
+  },
+  {
+    "id": "site_b",
+    "name": "FAKE Plateau B",
+    "lat": -88.8,
+    "lon": 60.0,
+    "elevation_m": 1200,
+    "source": "FAKE DATA for development, not NASA data",
+    "notes": "Fake plateau, long dark spells"
+  },
+  {
+    "id": "site_c",
+    "name": "FAKE Rim C",
+    "lat": -87.9,
+    "lon": 300.0,
+    "elevation_m": 900,
+    "source": "FAKE DATA for development, not NASA data",
+    "notes": "Fake crater rim, Earth often blocked"
+  }
+]

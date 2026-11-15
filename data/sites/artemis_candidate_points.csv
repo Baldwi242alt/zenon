@@ -1,0 +1,84 @@
+# Candidate landing points inside NASA's nine Artemis III candidate regions (NASA, Oct 28 2024 update:
+# https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/).
+# Point coordinates: Appendix A of "Assessing Potential Landing Sites With Favorable Illumination and
+# Accessible, Potentially Volatile-Rich Permanently Shadowed Regions Within Artemis Candidate Landing
+# Regions", Journal of Geophysical Research: Planets (2025), doi:10.1029/2025JE009434.
+# Longitudes are as published (east positive, -180..180). Only regions on the 2024 list are included.
+region,nasa_name,point,lat,lon
+cabeus_b_peak,Peak near Cabeus B,PCB01,-83.7630,-69.9830
+cabeus_b_peak,Peak near Cabeus B,PCB02,-83.6320,-67.6340
+cabeus_b_peak,Peak near Cabeus B,PCB03,-83.5630,-68.2010
+cabeus_b_peak,Peak near Cabeus B,PCB04,-83.3690,-67.6650
+cabeus_b_peak,Peak near Cabeus B,PCB05,-83.5390,-71.9420
+haworth,Haworth,HW01,-86.7680,-20.5140
+haworth,Haworth,HW02,-86.8080,-21.7190
+haworth,Haworth,HW03,-86.8600,-19.8930
+haworth,Haworth,HW04,-86.5680,-21.4730
+haworth,Haworth,HW05,-86.6620,-30.5480
+haworth,Haworth,HW06,-87.0500,-24.2400
+haworth,Haworth,HW07,-86.9320,-23.0200
+haworth,Haworth,HW08,-86.9240,-25.8090
+haworth,Haworth,HW09,-86.6230,-26.0750
+haworth,Haworth,HW10,-86.5270,-14.8760
+haworth,Haworth,HW_K2023,-86.9900,-24.2540
+malapert_massif,Malapert Massif,MMA01,-85.9420,-0.9440
+malapert_massif,Malapert Massif,MMA02,-86.0150,3.3820
+malapert_massif,Malapert Massif,MMA03,-85.9580,-3.2780
+malapert_massif,Malapert Massif,MMA04,-86.3100,-0.4590
+mons_mouton_plateau,Mons Mouton Plateau,MMP01,-85.1110,26.7100
+mons_mouton_plateau,Mons Mouton Plateau,MMP02,-84.8050,24.8870
+mons_mouton_plateau,Mons Mouton Plateau,MMP03,-84.9680,31.1530
+mons_mouton_plateau,Mons Mouton Plateau,MMP04,-84.6860,20.8870
+mons_mouton_plateau,Mons Mouton Plateau,MMP05,-84.4160,28.2120
+mons_mouton_plateau,Mons Mouton Plateau,MMP06,-84.5960,30.4520
+mons_mouton_plateau,Mons Mouton Plateau,MMP07,-84.6830,37.3390
+mons_mouton_plateau,Mons Mouton Plateau,MMP08,-84.2110,40.8100
+mons_mouton_plateau,Mons Mouton Plateau,MMP09,-83.6840,32.8850
+mons_mouton_plateau,Mons Mouton Plateau,MMP10,-84.1380,25.6420
+mons_mouton_plateau,Mons Mouton Plateau,MMP11,-84.2690,36.6720
+mons_mouton,Mons Mouton,MMO01,-85.4160,31.8510
+mons_mouton,Mons Mouton,MMO02,-85.4810,29.5490
+mons_mouton,Mons Mouton,MMO03,-85.4090,30.4060
+mons_mouton,Mons Mouton,MMO04,-85.4090,28.1500
+mons_mouton,Mons Mouton,MMO05,-85.3440,28.5940
+mons_mouton,Mons Mouton,MMO06,-85.2610,30.1860
+mons_mouton,Mons Mouton,MMO07,-85.1950,32.9290
+mons_mouton,Mons Mouton,MMO08,-85.5130,35.7040
+mons_mouton,Mons Mouton,MMO09,-85.4660,33.0400
+mons_mouton,Mons Mouton,MMO10,-85.4610,31.4900
+nobile_rim_1,Nobile Rim 1,NR101,-85.2950,36.9170
+nobile_rim_1,Nobile Rim 1,NR102,-85.2610,36.8890
+nobile_rim_1,Nobile Rim 1,NR103,-85.5460,37.5570
+nobile_rim_1,Nobile Rim 1,NR104,-85.0170,37.8750
+nobile_rim_1,Nobile Rim 1,NR105,-85.0720,37.5550
+nobile_rim_1,Nobile Rim 1,NR106,-85.1560,36.9860
+nobile_rim_1,Nobile Rim 1,NR107,-85.1980,37.1770
+nobile_rim_1,Nobile Rim 1,NR108,-85.1030,36.7510
+nobile_rim_1,Nobile Rim 1,NR109,-85.0400,37.4340
+nobile_rim_2,Nobile Rim 2,NR201,-84.0540,56.4810
+nobile_rim_2,Nobile Rim 2,NR202,-84.1550,59.8350
+nobile_rim_2,Nobile Rim 2,NR203,-83.6870,57.0080
+nobile_rim_2,Nobile Rim 2,NR204,-83.7850,57.6830
+nobile_rim_2,Nobile Rim 2,NR205,-83.6180,59.0570
+nobile_rim_2,Nobile Rim 2,NR206,-83.7810,59.2820
+nobile_rim_2,Nobile Rim 2,NR207,-83.9180,59.3260
+nobile_rim_2,Nobile Rim 2,NR208,-83.9060,57.8110
+nobile_rim_2,Nobile Rim 2,NR2_K2023,-84.0740,59.1970
+de_gerlache_rim_2,de Gerlache Rim 2,dGR201,-88.3890,-68.8650
+de_gerlache_rim_2,de Gerlache Rim 2,dGR202,-88.0370,-75.0440
+de_gerlache_rim_2,de Gerlache Rim 2,dGR203,-88.1410,-71.6960
+de_gerlache_rim_2,de Gerlache Rim 2,dGR204,-88.1380,-74.3330
+de_gerlache_rim_2,de Gerlache Rim 2,dGR205,-88.0650,-62.0740
+de_gerlache_rim_2,de Gerlache Rim 2,dGR206,-87.9470,-62.0980
+de_gerlache_rim_2,de Gerlache Rim 2,dGR2_K2023,-88.4500,-67.8590
+slater_plain,Slater Plain,SP01,-87.4780,124.5210
+slater_plain,Slater Plain,SP02,-87.3820,126.5130
+slater_plain,Slater Plain,SP03,-87.2830,123.7480
+slater_plain,Slater Plain,SP04,-87.1920,123.0340
+slater_plain,Slater Plain,SP05,-87.1820,119.7030
+slater_plain,Slater Plain,SP06,-87.0730,126.1310
+slater_plain,Slater Plain,SP07,-87.1310,127.8570
+slater_plain,Slater Plain,SP08,-87.3270,130.0540
+slater_plain,Slater Plain,SP09,-87.1840,133.3440
+slater_plain,Slater Plain,SP10,-87.0320,130.7020
+slater_plain,Slater Plain,SP11,-86.9500,126.6750

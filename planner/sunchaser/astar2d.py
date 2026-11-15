@@ -1,70 +1,50 @@
+"""The naive planner: shortest route across the grid, ignoring the Sun.
+
+8-connected A* search. The cost of a route is its length in metres. The
+heuristic is the "octile" distance: the length of the best possible route on
+an empty grid (diagonal steps until lined up, then straight). It never
+overestimates the true remaining distance, which is what guarantees A* returns
+a shortest route.
+
+This is the route a planner picks if it only looks at the map. At the lunar
+south pole it tends to drive straight into shadow.
+"""
+
 import heapq
-import math
+
+from .world import World
+
+
+def shortest_path(world, start, target):
+    """Shortest drivable route from start to target as a list of (row, col), or None."""
+    s, g = world.idx(*start), world.idx(*target)
+    if not world.moves[s] or not world.moves[g]:
+        return None
+    best = {s: 0.0}
+    came = {}
+    # Heap entries: (f, -g, cell). On equal f the larger g goes first (it is
+    # closer to the target), which cuts the number of cells explored.
+    heap = [(world.octile_m(s, g), 0.0, s)]
+    while heap:
+        f, neg_g, cur = heapq.heappop(heap)
+        cost = -neg_g
+        if cur == g:
+            path = [cur]
+            while cur in came:
+                cur = came[cur]
+                path.append(cur)
+            return [world.rc(i) for i in reversed(path)]
+        if cost > best[cur] + 1e-9:
+            continue                                  # an older, worse entry
+        for nb, _, _, dist in world.moves[cur]:
+            ng = cost + dist
+            if ng < best.get(nb, float("inf")) - 1e-9:
+                best[nb] = ng
+                came[nb] = cur
+                heapq.heappush(heap, (ng + world.octile_m(nb, g), -ng, nb))
+    return None
+
 
 def astar_shortest_path(grid, start, target, rover):
-    """
-    Finds the shortest path from start to target using 8-connected A*.
-    Ignores the sun entirely (that's the point - it's the naive route).
-    """
-    rows = grid["rows"]
-    cols = grid["cols"]
-    cell_size = grid["cell_size_m"]
-    max_slope = rover["drive"]["max_slope_deg"]
-    
-    def get_neighbors(r, c):
-        # 8 directions (N, S, E, W, NE, NW, SE, SW)
-        dirs = [(-1,0), (1,0), (0,-1), (0,1), (-1,-1), (-1,1), (1,-1), (1,1)]
-        neighbors = []
-        
-        for dr, dc in dirs:
-            nr, nc = r + dr, c + dc
-            if 0 <= nr < rows and 0 <= nc < cols:
-                # Check slope limits
-                if grid["slope_deg"][nr][nc] > max_slope:
-                    continue
-                
-                # Distance (diagonal is longer)
-                if dr != 0 and dc != 0:
-                    cost = cell_size * math.sqrt(2)
-                else:
-                    cost = cell_size
-                    
-                neighbors.append(((nr, nc), cost))
-        return neighbors
-
-    def heuristic(r, c):
-        # Octile distance to target (admissible for 8-connected grids)
-        dr = abs(r - target[0])
-        dc = abs(c - target[1])
-        return cell_size * (max(dr, dc) + (math.sqrt(2) - 1) * min(dr, dc))
-
-    # A* Algorithm
-    open_set = []
-    heapq.heappush(open_set, (0, start))
-    
-    came_from = {}
-    g_score = {start: 0}
-    
-    while open_set:
-        current_f, current = heapq.heappop(open_set)
-        
-        if current == target:
-            # Rebuild path
-            path = []
-            while current in came_from:
-                path.append(current)
-                current = came_from[current]
-            path.append(start)
-            path.reverse()
-            return path
-            
-        for neighbor, move_cost in get_neighbors(current[0], current[1]):
-            tentative_g = g_score[current] + move_cost
-            
-            if neighbor not in g_score or tentative_g < g_score[neighbor]:
-                came_from[neighbor] = current
-                g_score[neighbor] = tentative_g
-                f_score = tentative_g + heuristic(neighbor[0], neighbor[1])
-                heapq.heappush(open_set, (f_score, neighbor))
-                
-    return None # No path found
+    """Harril's original entry point (grid and rover as loaded from JSON)."""
+    return shortest_path(World(grid, rover), tuple(start), tuple(target))

@@ -1,0 +1,7 @@
+numpy
+requests
+pyproj
+rasterio
+pytest
+anthropic
+google-genai
